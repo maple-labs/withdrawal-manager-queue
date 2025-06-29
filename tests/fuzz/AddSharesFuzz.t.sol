@@ -10,22 +10,14 @@ contract AddSharesFuzzTests is TestBase {
     }
 
     function testFuzz_addShares(uint256[50] memory amount_, address[50] calldata account_) external {
-        address owner_;
-
         uint128 lastRequestId;
-        uint256 shares_;
         uint256 totalShares_;
+        uint128 requestId_;
+        uint256 shares_;
 
         for (uint256 i; i < account_.length; ++i) {
             amount_[i] = bound(amount_[i], 1, 1e29);
-
-            if (withdrawalManager.requestIds(account_[i]) > 0) {
-                vm.prank(pm);
-                vm.expectRevert("WM:AS:IN_QUEUE");
-                withdrawalManager.addShares(amount_[i], account_[i]);
-                break;
-            }
-
+           
             pool.mint(pm, amount_[i]);
 
             vm.startPrank(pm);
@@ -40,11 +32,11 @@ contract AddSharesFuzzTests is TestBase {
 
             assertEq(lastRequestId, i + 1);
 
-            ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId);
+            (requestId_, shares_) = getLastRequestByOwner(account_[i]);
 
-            assertEq(shares_,                              amount_[i]);
-            assertEq(withdrawalManager.totalShares(),      totalShares_);
-            assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+            assertEq(shares_,                         amount_[i]);
+            assertEq(withdrawalManager.totalShares(), totalShares_);
+            assertEq(requestId_,                      lastRequestId);
         }
     }
 

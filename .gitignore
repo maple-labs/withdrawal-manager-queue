@@ -21,3 +21,6 @@ docs/
 
 # Dotenv file
 .env
+
+# Vscode
+.vscode*

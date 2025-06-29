@@ -28,13 +28,30 @@ contract AddSharesTests is TestBase {
         withdrawalManager.addShares(0, lp);
     }
 
-    function test_addShares_alreadyInQueue() external {
+    function test_addShares_multiple_requests() external{   
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
         vm.prank(pm);
-        vm.expectRevert("WM:AS:IN_QUEUE");
         withdrawalManager.addShares(1, lp);
+
+        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+
+        assertEq(lastRequestId_, 2);
+
+        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        assertEq(owner_, lp);
+        assertEq(shares_, 1);
+
+        (uint128[] memory requestIds, uint256[] memory requestShares) = withdrawalManager.requests(lp);
+
+        assertEq(requestIds.length, 2);
+        assertEq(requestShares.length, 2);
+        assertEq(requestIds[0], 1);
+        assertEq(requestIds[1], 2);
+        assertEq(requestShares[0], 1);
+        assertEq(requestShares[1], 1);
     }
 
     function test_addShares_failedTransfer() external {
@@ -44,9 +61,9 @@ contract AddSharesTests is TestBase {
     }
 
     function test_addShares_newRequestAddedToQueue() external {
-        ( , uint128 lastRequestId ) = withdrawalManager.queue();
+        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 0);
+        assertEq(lastRequestId_, 0);
 
         vm.expectEmit();
         emit RequestCreated(1, lp, 1);
@@ -54,17 +71,17 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
-        ( , lastRequestId ) = withdrawalManager.queue();
+        ( , lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 1);
+        assertEq(lastRequestId_, 1);
     }
 
     function test_addShares_newRequestAddedToQueue_manual() external {
         withdrawalManager.__setManualWithdrawal(lp, true);
 
-        ( , uint128 lastRequestId ) = withdrawalManager.queue();
+        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 0);
+        assertEq(lastRequestId_, 0);
 
         vm.expectEmit();
         emit RequestCreated(1, lp, 1);
@@ -72,27 +89,30 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
-        ( , lastRequestId ) = withdrawalManager.queue();
+        ( , lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 1);
+        assertEq(lastRequestId_, 1);
     }
 
     function test_addShares_success() external {
+        uint128 requestId_;
+
         vm.expectEmit();
         emit RequestCreated(1, lp, 1);
 
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
-        ( , uint128 lastRequestId ) = withdrawalManager.queue();
+        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 1);
+        assertEq(lastRequestId_, 1);
 
-        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId);
-
-        assertEq(shares_,                              1);
-        assertEq(withdrawalManager.totalShares(),      1);
-        assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
+        ( requestId_,) = getLastRequestByOwner(owner_);
+        
+        assertEq(shares_,                         1);
+        assertEq(withdrawalManager.totalShares(), 1);
+        assertEq(requestId_,                      lastRequestId_);
 
         address lp2 = makeAddr("lp2");
 
@@ -102,15 +122,17 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp2);
 
-        ( , lastRequestId ) = withdrawalManager.queue();
+        ( , lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId, 2);
+        assertEq(lastRequestId_, 2);
 
-        ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId);
+        ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
 
-        assertEq(shares_,                              1);
-        assertEq(withdrawalManager.totalShares(),      2);
-        assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+        ( requestId_,) = getLastRequestByOwner(owner_);
+
+        assertEq(shares_,                         1);
+        assertEq(withdrawalManager.totalShares(), 2);
+        assertEq(requestId_,                      lastRequestId_);
     }
 
 }

@@ -17,8 +17,8 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         isManualWithdrawal[owner_] = isManual_;
     }
 
-    function __setOwnerRequest(address owner_, uint128 requestId_) external {
-        requestIds[owner_] = requestId_;
+    function __setLastRequest(address owner_, uint128 requestId_) external {
+        lastRequestIds[owner_] = requestId_;
     }
 
     function __setQueue(uint128 nextRequestId_, uint128 lastRequestId_) external {
@@ -27,12 +27,16 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setRequest(uint128 requestId_, address owner_, uint256 shares_) external {
-        requestIds[owner_] = requestId_;
         queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
+        lastRequestIds[owner_] = requestId_;
     }
 
     function __setTotalShares(uint256 totalShares_) external {
         totalShares = totalShares_;
+    }
+
+    function __setUserRequestCount(address owner_, uint256 requestCount_) external {
+        requestCount[owner_] = requestCount_;
     }
 
 }

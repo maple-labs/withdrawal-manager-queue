@@ -15,12 +15,14 @@ contract RemoveSharesFuzzTests is TestBase {
         uint128 lastRequestId;
         uint256 shares_;
         uint256 totalShares_;
-
+        uint128 requestId_;
+        
         for (uint256 i; i < account_.length; ++i) {
             amount0_[i] = bound(amount0_[i], 1, 1e29);
             amount1_[i] = bound(amount1_[i], 1, 1e29);
 
-            if (withdrawalManager.requestIds(account_[i]) > 0) break;
+            ( requestId_, ) = getLastRequestByOwner(account_[i]);
+            if (requestId_ > 0) break;
 
             pool.mint(pm, amount0_[i]);
 
@@ -36,10 +38,12 @@ contract RemoveSharesFuzzTests is TestBase {
 
             ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId);
 
-            assertEq(shares_,                              amount0_[i]);
-            assertEq(withdrawalManager.totalShares(),      totalShares_);
-            assertEq(lastRequestId,                        i + 1);
-            assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+            ( requestId_, ) = getLastRequestByOwner(account_[i]);
+
+            assertEq(shares_,                         amount0_[i]);
+            assertEq(withdrawalManager.totalShares(), totalShares_);
+            assertEq(lastRequestId,                   i + 1);
+            assertEq(requestId_,                      lastRequestId);
 
             if (amount1_[i] > amount0_[i]) {
                 vm.prank(pm);
@@ -61,10 +65,11 @@ contract RemoveSharesFuzzTests is TestBase {
             assertEq(withdrawalManager.totalShares(), totalShares_);
             assertEq(lastRequestId,                   i + 1);
 
+            ( requestId_, ) = getLastRequestByOwner(owner_);
             if (amount0_[i] == amount1_[i]) {
-                assertEq(withdrawalManager.requestIds(owner_), 0);
+                assertEq(requestId_, 0);
             } else {
-                assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+                assertEq(requestId_, lastRequestId);
             }
         }
     }

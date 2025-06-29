@@ -19,14 +19,6 @@ contract SetManualWithdrawalTests is TestBase {
         withdrawalManager.setManualWithdrawal(lp, true);
     }
 
-    function test_setManualWithdrawal_existingRequest() external {
-        withdrawalManager.__setRequest(1, lp, 100e18);
-
-        vm.prank(poolDelegate);
-        vm.expectRevert("WM:SMW:IN_QUEUE");
-        withdrawalManager.setManualWithdrawal(lp, true);
-    }
-
     function test_setManualWithdrawal_success() external {
         assertEq(withdrawalManager.isManualWithdrawal(lp), false);
 

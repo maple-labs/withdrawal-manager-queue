@@ -43,6 +43,7 @@ import { MapleWithdrawalManagerStorage } from "./proxy/MapleWithdrawalManagerSto
 
 */
 
+// TODO: Ordering of functions
 contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManagerStorage , MapleProxiedInternals {
 
     /**************************************************************************************************************************************/
@@ -131,22 +132,10 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** State-Changing Functions                                                                                                       ***/
     /**************************************************************************************************************************************/
 
-    function addShares(uint256 shares_, address owner_) external override onlyPoolManager {
-        require(shares_ > 0,             "WM:AS:ZERO_SHARES");
-        require(requestIds[owner_] == 0, "WM:AS:IN_QUEUE");
+    function addShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint128 lastRequestId_) {
+        require(shares_ > 0, "WM:AS:ZERO_SHARES");
 
-        uint128 lastRequestId_ = ++queue.lastRequestId;
-
-        queue.requests[lastRequestId_] = WithdrawalRequest(owner_, shares_);
-
-        requestIds[owner_] = lastRequestId_;
-
-        // Increase the number of shares locked.
-        totalShares += shares_;
-
-        require(ERC20Helper.transferFrom(pool, msg.sender, address(this), shares_), "WM:AS:FAILED_TRANSFER");
-
-        emit RequestCreated(lastRequestId_, owner_, shares_);
+        lastRequestId_ = _addRequest(owner_, shares_);
     }
 
     function processExit(
@@ -193,18 +182,114 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function removeShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 sharesReturned_) {
-        uint128 requestId_ = requestIds[owner_];
-
         require(shares_ > 0,    "WM:RS:ZERO_SHARES");
-        require(requestId_ > 0, "WM:RS:NOT_IN_QUEUE");
 
-        uint256 currentShares_ = queue.requests[requestId_].shares;
+        uint128 lastRequestId_ = lastRequestIds[owner_];
 
-        require(shares_ <= currentShares_, "WM:RS:INSUFFICIENT_SHARES");
+        require(lastRequestId_ > 0, "WM:RS:NO_REQUESTS");
 
-        uint256 sharesRemaining_ = currentShares_ - shares_;
+        WithdrawalRequest memory request_ = queue.requests[lastRequestId_];
 
-        totalShares -= shares_;
+        require(request_.shares >= shares_, "WM:RS:INSUFFICIENT_SHARES");
+
+        sharesReturned_ = _removeShares(lastRequestId_, shares_, request_.owner, request_.shares);
+    }
+
+    // TODO: To be more gas efficient accumulate shares to be removed and then remove them all at once from totalShares.
+    function removeRequest(
+        address owner_,
+        uint128[] calldata requestIds_
+    ) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins
+    {
+        require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
+        require(requestIds_.length > 0, "WM:RR:ZERO_REQUESTS");
+
+        WithdrawalRequest memory withdrawalRequest_;
+
+        for (uint256 i = 0; i < requestIds_.length; ++i) {
+            withdrawalRequest_ = queue.requests[requestIds_[i]];
+
+            require(withdrawalRequest_.shares > 0,      "WM:RR:NOT_IN_QUEUE");
+            require(withdrawalRequest_.owner == owner_, "WM:RR:NOT_OWNER");
+
+            _removeRequest(owner_, requestIds_[i]);
+
+            totalShares -= withdrawalRequest_.shares;
+
+            require(ERC20Helper.transfer(pool, owner_, withdrawalRequest_.shares), "WM:RR:TRANSFER_FAIL");
+        }
+    }
+
+    function setManualWithdrawal(address owner_, bool isManual_) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins {
+        isManualWithdrawal[owner_] = isManual_;
+
+        emit ManualWithdrawalSet(owner_, isManual_);
+    }
+
+    // TODO: Do both updateShares need nonReentrant guards?
+    function updateShares(
+        uint128 requestId_,
+        uint256 newSharesTotal_
+    ) public override whenProtocolNotPaused returns (uint128 updatedRequestId_)
+    {
+        WithdrawalRequest memory request_ = queue.requests[requestId_];
+
+        require(request_.owner != address(0),       "WM:US:INVALID_REQUEST");
+        require(request_.owner == msg.sender,       "WM:US:NOT_OWNER");
+        require(request_.shares != newSharesTotal_, "WM:US:NO_CHANGE");
+
+        uint256 sharesToRemove_ = newSharesTotal_ < request_.shares ? request_.shares - newSharesTotal_ : request_.shares;
+
+        _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);  // Removes shares and will cancel the request if there are no shares remaining.
+
+        if (newSharesTotal_ > request_.shares)
+            updatedRequestId_ = _addRequest(request_.owner, newSharesTotal_);
+        else
+            updatedRequestId_ = newSharesTotal_ == 0 ? 0 : requestId_;
+    }
+
+    function updateSharesBatch(
+        uint128[] memory requestIds_,
+        uint256[] calldata newSharesTotals_
+    ) external override whenProtocolNotPaused returns (uint128[] memory updatedRequestIds_)
+    {
+        require(requestIds_.length == newSharesTotals_.length, "WM:USB:ARRAY_LENGTH_MISMATCH");
+
+        for (uint256 i = 0; i < requestIds_.length; ++i) {
+            requestIds_[i] = updateShares(requestIds_[i], newSharesTotals_[i]);
+        }
+
+        updatedRequestIds_ = requestIds_;
+    }
+
+    /**************************************************************************************************************************************/
+    /*** Internal Functions                                                                                                             ***/
+    /**************************************************************************************************************************************/
+
+    function _addRequest(address owner_, uint256 shares_) internal returns (uint128 lastRequestId_) {
+        lastRequestId_ = ++queue.lastRequestId;
+
+        queue.requests[lastRequestId_] = WithdrawalRequest(owner_, shares_);
+        lastRequestIds[owner_]         = lastRequestId_;
+        requestCount[owner_]++;
+
+        // Increase the number of shares locked.
+        totalShares += shares_;
+
+        require(ERC20Helper.transferFrom(pool, msg.sender, address(this), shares_), "WM:AS:FAILED_TRANSFER");
+
+        emit RequestCreated(lastRequestId_, owner_, shares_);
+    }
+
+    function _removeShares(uint128 requestId_,
+        uint256 sharesToRemove_,
+        address owner_,
+        uint256 currentShares_
+    ) internal returns (uint256 sharesReturned_)
+    {
+        uint256 sharesRemaining_ = currentShares_ - sharesToRemove_;
+
+        totalShares -= sharesToRemove_;
 
         // If there are no shares remaining, cancel the withdrawal request.
         if (sharesRemaining_ == 0) {
@@ -212,41 +297,13 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         } else {
             queue.requests[requestId_].shares = sharesRemaining_;
 
-            emit RequestDecreased(requestId_, shares_);
+            emit RequestDecreased(requestId_, sharesToRemove_);
         }
 
-        require(ERC20Helper.transfer(pool, owner_, shares_), "WM:RS:TRANSFER_FAIL");
+        require(ERC20Helper.transfer(pool, owner_, sharesToRemove_), "WM:RS:TRANSFER_FAIL");
 
-        sharesReturned_ = shares_;
+        sharesReturned_ = sharesToRemove_;
     }
-
-    function removeRequest(address owner_) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins {
-        uint128 requestId_ = requestIds[owner_];
-
-        require(requestId_ > 0, "WM:RR:NOT_IN_QUEUE");
-
-        uint256 shares_ = queue.requests[requestId_].shares;
-
-        totalShares -= shares_;
-
-        _removeRequest(owner_, requestId_);
-
-        require(ERC20Helper.transfer(pool, owner_, shares_), "WM:RR:TRANSFER_FAIL");
-    }
-
-    function setManualWithdrawal(address owner_, bool isManual_) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins {
-        uint128 requestId_ = requestIds[owner_];
-
-        require(requestId_ == 0, "WM:SMW:IN_QUEUE");
-
-        isManualWithdrawal[owner_] = isManual_;
-
-        emit ManualWithdrawalSet(owner_, isManual_);
-    }
-
-    /**************************************************************************************************************************************/
-    /*** Internal Functions                                                                                                             ***/
-    /**************************************************************************************************************************************/
 
     function _calculateRedemption(uint256 sharesToRedeem_) internal view returns (uint256 redeemableShares_, uint256 resultingAssets_) {
         IPoolManagerLike poolManager_ = IPoolManagerLike(poolManager);
@@ -314,8 +371,10 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
         ( processedShares_, resultingAssets_ ) = _calculateRedemption(sharesToProcess_);
 
+        uint256 sharesRemaining_ = request_.shares - processedShares_;
+
         // If there are no remaining shares, request has been fully processed.
-        isProcessed_ = (request_.shares - processedShares_) == 0;
+        isProcessed_ = sharesRemaining_ == 0;
 
         emit RequestProcessed(requestId_, request_.owner, processedShares_, resultingAssets_);
 
@@ -324,7 +383,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(request_.owner, requestId_);
         } else {
             // Update the withdrawal request.
-            queue.requests[requestId_].shares = request_.shares - processedShares_;
+            queue.requests[requestId_].shares = sharesRemaining_;
 
             emit RequestDecreased(requestId_, processedShares_);
         }
@@ -343,8 +402,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function _removeRequest(address owner_, uint128 requestId_) internal {
-        delete requestIds[owner_];
+        delete lastRequestIds[owner_];
         delete queue.requests[requestId_];
+        requestCount[owner_]--;
 
         emit RequestRemoved(requestId_);
     }
@@ -422,6 +482,48 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     function requests(uint128 requestId_) external view override returns (address owner_, uint256 shares_) {
         owner_  = queue.requests[requestId_].owner;
         shares_ = queue.requests[requestId_].shares;
+    }
+
+    function requests(address owner_)
+        external view override returns (
+            uint128[] memory requestIds_,
+            uint256[] memory shares_
+        )
+    {
+        ( requestIds_, shares_ ) = requests(owner_, queue.nextRequestId, queue.lastRequestId);
+    }
+
+    function requests(address owner_, uint128 firstRequestId_, uint128 lastRequestId_)
+        public view override returns (
+            uint128[] memory requestIds_,
+            uint256[] memory shares_
+        )
+    {
+        WithdrawalRequest memory request_;
+        uint256 count_ = requestCount[owner_];
+        uint256 index_;
+        uint256 requestsAdded_;
+
+        requestIds_    = new uint128[](count_);
+        shares_        = new uint256[](count_);
+
+        while (firstRequestId_ <= lastRequestId_) {
+
+            if(requestsAdded_ == count_) {
+                break;
+            }
+
+            request_ = queue.requests[firstRequestId_];
+
+            if (request_.owner == owner_) {
+                requestIds_[index_] = firstRequestId_;
+                shares_[index_]     = request_.shares;
+                ++index_;
+                ++requestsAdded_;
+            }
+
+            ++firstRequestId_;
+        }
     }
 
     function securityAdmin() public view override returns (address securityAdmin_) {

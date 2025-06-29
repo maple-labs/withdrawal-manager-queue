@@ -4,6 +4,13 @@ pragma solidity ^0.8.7;
 interface IMapleWithdrawalManagerStorage {
 
     /**
+     *  @dev    Returns the identifier of the last withdrawal request made by a specific user.
+     *  @param  account Address of the user.
+     *  @return requestId Identifier of the last withdrawal request made by the user.
+     */
+    function lastRequestIds(address account) external view returns (uint128 requestId);
+
+    /**
      *  @dev    Returns the address of the pool contract.
      *  @return pool Address of the pool contract.
      */
@@ -36,12 +43,11 @@ interface IMapleWithdrawalManagerStorage {
     function manualSharesAvailable(address owner) external view returns (uint256 sharesAvailable);
 
     /**
-     *  @dev    Returns the request identifier of an account.
-     *          Returns zero if the account does not have a withdrawal request.
-     *  @param  account   Address of the account.
-     *  @return requestId Identifier of the withdrawal request.
+     *  @dev    Returns the number of pending withdrawal requests for a specific user.
+     *  @param  account      Account to retrieve the request count for.
+     *  @return requestCount Amount of requests pending redemption for the user.
      */
-    function requestIds(address account) external view returns (uint128 requestId);
+    function requestCount(address account) external view returns (uint256 requestCount);
 
     /**
      *  @dev    Returns the first and last withdrawal requests pending redemption.
@@ -49,5 +55,4 @@ interface IMapleWithdrawalManagerStorage {
      *  @return lastRequestId Identifier of the last created withdrawal request.
      */
     function queue() external view returns (uint128 nextRequestId, uint128 lastRequestId);
-
 }
