@@ -43,7 +43,6 @@ import { MapleWithdrawalManagerStorage } from "./proxy/MapleWithdrawalManagerSto
 
 */
 
-// TODO: Ordering of functions
 contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManagerStorage , MapleProxiedInternals {
 
     /**************************************************************************************************************************************/
@@ -129,7 +128,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     /**************************************************************************************************************************************/
-    /*** State-Changing Functions                                                                                                       ***/
+    /*** State-Changing Functions - OnlyPoolManager                                                                                     ***/
     /**************************************************************************************************************************************/
 
     function addShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint128 lastRequestId_) {
@@ -151,6 +150,24 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             ? _calculateRedemption(shares_)
             : _processManualExit(shares_, owner_);
     }
+
+    function removeShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 sharesReturned_) {
+        require(shares_ > 0,    "WM:RS:ZERO_SHARES");
+
+        uint128 lastRequestId_ = lastRequestIds[owner_];
+
+        require(lastRequestId_ > 0, "WM:RS:NO_REQUESTS");
+
+        WithdrawalRequest memory request_ = queue.requests[lastRequestId_];
+
+        require(request_.shares >= shares_, "WM:RS:INSUFFICIENT_SHARES");
+
+        sharesReturned_ = _removeShares(lastRequestId_, shares_, request_.owner, request_.shares);
+    }
+
+    /**************************************************************************************************************************************/
+    /*** State-Changing Functions -  onlyRedeemer                                                                                       ***/
+    /**************************************************************************************************************************************/
 
     function processRedemptions(uint256 maxSharesToProcess_) external override whenProtocolNotPaused nonReentrant onlyRedeemer {
         require(maxSharesToProcess_ > 0, "WM:PR:ZERO_SHARES");
@@ -181,21 +198,10 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         queue.nextRequestId = nextRequestId_;
     }
 
-    function removeShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 sharesReturned_) {
-        require(shares_ > 0,    "WM:RS:ZERO_SHARES");
+    /**************************************************************************************************************************************/
+    /*** State-Changing Functions - Admin functions                                                                                     ***/
+    /**************************************************************************************************************************************/
 
-        uint128 lastRequestId_ = lastRequestIds[owner_];
-
-        require(lastRequestId_ > 0, "WM:RS:NO_REQUESTS");
-
-        WithdrawalRequest memory request_ = queue.requests[lastRequestId_];
-
-        require(request_.shares >= shares_, "WM:RS:INSUFFICIENT_SHARES");
-
-        sharesReturned_ = _removeShares(lastRequestId_, shares_, request_.owner, request_.shares);
-    }
-
-    // TODO: To be more gas efficient accumulate shares to be removed and then remove them all at once from totalShares.
     function removeRequest(
         address owner_,
         uint128[] calldata requestIds_
@@ -203,6 +209,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     {
         require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
         require(requestIds_.length > 0, "WM:RR:ZERO_REQUESTS");
+
+        uint256 sharesToRemove_;
 
         WithdrawalRequest memory withdrawalRequest_;
 
@@ -214,10 +222,12 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
             _removeRequest(owner_, requestIds_[i]);
 
-            totalShares -= withdrawalRequest_.shares;
+            sharesToRemove_ += withdrawalRequest_.shares;
 
             require(ERC20Helper.transfer(pool, owner_, withdrawalRequest_.shares), "WM:RR:TRANSFER_FAIL");
         }
+
+        totalShares -= sharesToRemove_;
     }
 
     function setManualWithdrawal(address owner_, bool isManual_) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins {
@@ -226,11 +236,14 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         emit ManualWithdrawalSet(owner_, isManual_);
     }
 
-    // TODO: Do both updateShares need nonReentrant guards?
+    /**************************************************************************************************************************************/
+    /*** Unprivileged External Functions                                                                                                ***/
+    /**************************************************************************************************************************************/
+
     function updateShares(
         uint128 requestId_,
         uint256 newSharesTotal_
-    ) public override whenProtocolNotPaused returns (uint128 updatedRequestId_)
+    ) public override whenProtocolNotPaused nonReentrant returns (uint128 updatedRequestId_)
     {
         WithdrawalRequest memory request_ = queue.requests[requestId_];
 
@@ -240,7 +253,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
         uint256 sharesToRemove_ = newSharesTotal_ < request_.shares ? request_.shares - newSharesTotal_ : request_.shares;
 
-        _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);  // Removes shares and will cancel the request if there are no shares remaining.
+        // Removes shares and will cancel the request if there are no shares remaining.
+        _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);
 
         if (newSharesTotal_ > request_.shares)
             updatedRequestId_ = _addRequest(request_.owner, newSharesTotal_);
@@ -484,16 +498,16 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         shares_ = queue.requests[requestId_].shares;
     }
 
-    function requests(address owner_)
+    function requestsByOwner(address owner_)
         external view override returns (
             uint128[] memory requestIds_,
             uint256[] memory shares_
         )
     {
-        ( requestIds_, shares_ ) = requests(owner_, queue.nextRequestId, queue.lastRequestId);
+        ( requestIds_, shares_ ) = requestsByOwnerRange(owner_, queue.nextRequestId, queue.lastRequestId);
     }
 
-    function requests(address owner_, uint128 firstRequestId_, uint128 lastRequestId_)
+    function requestsByOwnerRange(address owner_, uint128 firstRequestId_, uint128 lastRequestId_)
         public view override returns (
             uint128[] memory requestIds_,
             uint256[] memory shares_

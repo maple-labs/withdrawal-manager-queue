@@ -44,7 +44,7 @@ contract AddSharesTests is TestBase {
         assertEq(owner_, lp);
         assertEq(shares_, 1);
 
-        (uint128[] memory requestIds, uint256[] memory requestShares) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds, uint256[] memory requestShares) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds.length, 2);
         assertEq(requestShares.length, 2);

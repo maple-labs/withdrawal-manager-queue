@@ -5,8 +5,6 @@ import { IMapleProxied } from "../../modules/maple-proxy-factory/contracts/inter
 
 import { IMapleWithdrawalManagerStorage } from "./IMapleWithdrawalManagerStorage.sol";
 
-// TODO: naming of two functions with requests()
-// TODO: Add disclaimer about running out of gas on requests() without pagination
 interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxied {
 
     /**************************************************************************************************************************************/
@@ -220,11 +218,12 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
 
     /**
      *  @dev    Returns the pending requests by owner.
+     *          NOTE: This function may run out of gas if there are too many requests. Use the overload with pagination.
      *  @param  owner Address of the account to check for pending requests.
      *  @return requestIds Array of request identifiers.
      *  @return shares     Array of shares associated with each request.
      */
-    function requests(address owner) external view returns (uint128[] memory requestIds, uint256[] memory shares);
+    function requestsByOwner(address owner) external view returns (uint128[] memory requestIds, uint256[] memory shares);
 
     /**
      *  @dev    Returns the pending requests by owner and request ID range.
@@ -235,7 +234,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return requestIds     Array of request identifiers.
      *  @return shares         Array of shares associated with each request.
      */
-    function requests(address owner, uint128 firstRequestId, uint128 lastRequestId)
+    function requestsByOwnerRange(address owner, uint128 firstRequestId, uint128 lastRequestId)
         external view returns (
             uint128[] memory requestIds,
             uint256[] memory shares

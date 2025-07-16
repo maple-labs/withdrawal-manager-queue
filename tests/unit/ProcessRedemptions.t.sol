@@ -91,7 +91,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),             sharesLocked);
         assertEq(withdrawalManager.manualSharesAvailable(lp), sharesLocked);
@@ -113,7 +113,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),             sharesLocked);
         assertEq(withdrawalManager.manualSharesAvailable(lp), sharesLocked);
@@ -146,7 +146,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),             sharesLocked);
         assertEq(withdrawalManager.manualSharesAvailable(lp), sharesLocked / 2);
@@ -175,7 +175,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked / 2);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
         ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),             sharesLocked);
@@ -203,7 +203,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(2 * sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),             sharesLocked);
         assertEq(withdrawalManager.manualSharesAvailable(lp), sharesLocked);
@@ -229,7 +229,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(), 0);
         assertEq(requestIdsLp_.length,            0);
@@ -257,7 +257,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked / 2);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
         ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(), sharesLocked / 2);
@@ -289,7 +289,7 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(2 * sharesLocked);
 
-        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(),  0);
         assertEq(requestIdsLp_.length,             0);
@@ -325,8 +325,8 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
 
-        (uint128[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requests(lp);
-        (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requests(lp2);
+        (uint128[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requestsByOwner(lp);
+        (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2);
 
         assertEq(withdrawalManager.totalShares(), 0);
         assertEq(requestIdsLp1_.length,           0);
@@ -389,10 +389,10 @@ contract ComplexRedemptionTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesToProcess_);
 
-        (uint128[] memory requestIds2_, uint256[] memory shares2_) = withdrawalManager.requests(address(2));
-        (uint128[] memory requestIds3_, uint256[] memory shares3_) = withdrawalManager.requests(address(3));
-        (uint128[] memory requestIds5_, uint256[] memory shares5_) = withdrawalManager.requests(address(5));
-        (uint128[] memory requestIds6_, uint256[] memory shares6_) = withdrawalManager.requests(address(6));
+        (uint128[] memory requestIds2_, uint256[] memory shares2_) = withdrawalManager.requestsByOwner(address(2));
+        (uint128[] memory requestIds3_, uint256[] memory shares3_) = withdrawalManager.requestsByOwner(address(3));
+        (uint128[] memory requestIds5_, uint256[] memory shares5_) = withdrawalManager.requestsByOwner(address(5));
+        (uint128[] memory requestIds6_, uint256[] memory shares6_) = withdrawalManager.requestsByOwner(address(6));
 
         assertEq(requestIds2_.length, 0);
         assertEq(shares2_.length,     0);

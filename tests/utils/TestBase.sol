@@ -86,7 +86,7 @@ contract TestBase is Test {
     }
 
     function getLastRequestByOwner(address owner) internal view returns (uint128 lastRequestId, uint256 shares) {
-        ( uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(owner);
+        ( uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(owner);
 
         return requestIds_.length == 0 ? (0,0) : (requestIds_[requestIds_.length - 1], shares_[shares_.length - 1]);
     }

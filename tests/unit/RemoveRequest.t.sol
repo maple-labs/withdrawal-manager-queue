@@ -10,10 +10,10 @@ contract RemoveRequestTests is TestBase {
     function setUp() public override {
         super.setUp();
 
-        pool.mint(pm, 2);
+        pool.mint(pm, 4);
 
         vm.prank(pm);
-        pool.approve(address(withdrawalManager), 2);
+        pool.approve(address(withdrawalManager), 4);
     }
 
     function test_removeRequest_protocolPaused() external {
@@ -51,7 +51,6 @@ contract RemoveRequestTests is TestBase {
         withdrawalManager.removeRequest(lp, requestIds_);
     }
 
-    // TODO: Add test with multiple requests to remove. 
     function test_removeRequest_success() external {
         uint128 lastRequestIdLp_;
 
@@ -86,6 +85,53 @@ contract RemoveRequestTests is TestBase {
         ( uint128 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
 
         assertEq(lastRequestId_,                  1);
+        assertEq(shares_,                         0);
+        assertEq(owner_,                          address(0));
+        assertEq(lastRequestIdLp_,                0);
+        assertEq(lastRequestByOwner_,             0);
+        assertEq(withdrawalManager.totalShares(), 0);
+    }
+
+    function test_removeRequest_multiple_requests_success() external {
+        uint128 lastRequestIdLp_;
+
+        vm.startPrank(pm);
+        withdrawalManager.addShares(2, lp);
+        withdrawalManager.addShares(2, lp);
+        vm.stopPrank();
+
+        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+
+        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        ( lastRequestIdLp_, ) = getLastRequestByOwner(lp);
+
+        assertEq(shares_,                         2);
+        assertEq(withdrawalManager.totalShares(), 4);
+        assertEq(lastRequestId_,                  2);
+        assertEq(lastRequestIdLp_,                lastRequestId_);
+
+        uint128[] memory requestIds = new uint128[](2);
+        requestIds[0] = 1;
+        requestIds[1] = 2;
+
+        vm.expectEmit();
+        emit RequestRemoved(1);
+
+        vm.expectEmit();
+        emit RequestRemoved(2);
+
+        vm.prank(poolDelegate);
+        withdrawalManager.removeRequest(lp, requestIds);
+
+        ( , lastRequestId_ ) = withdrawalManager.queue();
+
+        ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        ( lastRequestIdLp_, )            = getLastRequestByOwner(lp);
+        ( uint128 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
+
+        assertEq(lastRequestId_,                  2);
         assertEq(shares_,                         0);
         assertEq(owner_,                          address(0));
         assertEq(lastRequestIdLp_,                0);

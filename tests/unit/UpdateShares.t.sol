@@ -99,7 +99,7 @@ contract UpdateSharesSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(1, lp);
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIdBefore_,         1, "Request ID should be 1");
         assertEq(requestIdsBefore_.length, 1, "Request IDs length should be 1");
@@ -114,7 +114,7 @@ contract UpdateSharesSuccessTests is TestBase {
         // Increase shares from 1 to 2 creates a new request and removes the old one.
         uint128 newRequestId_ = withdrawalManager.updateShares(requestIdBefore_, 2);
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(newRequestId_,      2, "Request ID should be 2");
         assertEq(requestIds_.length, 1, "Request IDs length should be 1");
@@ -140,7 +140,7 @@ contract UpdateSharesSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(2, lp);
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIdBefore_,         1, "Request ID Before should be 1 (addShares)");
         assertEq(requestIdsBefore_.length, 1, "Request IDs length before should be 1");
@@ -154,7 +154,7 @@ contract UpdateSharesSuccessTests is TestBase {
         // Decrease shares from 2 to 1 keeps the same request ID.
         uint128 newRequestId_ = withdrawalManager.updateShares(requestIdBefore_, 1);
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(newRequestId_,      1, "Request ID should be 1 (addShares)");
         assertEq(requestIds_.length, 1, "Request IDs length should be 1");
@@ -204,9 +204,9 @@ contract UpdateSharesSuccessTests is TestBase {
         vm.stopPrank();
 
         {
-            (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_)   = withdrawalManager.requests(lp);
-            (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requests(lp2_);
-            (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requests(lp3_);
+            (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_)   = withdrawalManager.requestsByOwner(lp);
+            (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2_);
+            (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requestsByOwner(lp3_);
 
             assertEq(requestIdsLp_.length,  2, "LP request IDs length should be 2");
             assertEq(requestIdsLp2_.length, 2, "LP2 request IDs length should be 2");
@@ -260,9 +260,9 @@ contract UpdateSharesSuccessTests is TestBase {
         }
 
         {
-            (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_)   = withdrawalManager.requests(lp);
-            (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requests(lp2_);
-            (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requests(lp3_);
+            (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_)   = withdrawalManager.requestsByOwner(lp);
+            (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2_);
+            (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requestsByOwner(lp3_);
 
             assertEq(requestIdsLp_.length,  2, "LP request IDs length should be 2");
             assertEq(requestIdsLp2_.length, 1, "LP2 request IDs length should be 1");
@@ -378,7 +378,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(1, lp);
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIdBefore_,         1, "Request ID should be 1");
         assertEq(requestIdsBefore_.length, 1, "Request IDs length should be 1");
@@ -403,7 +403,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(newRequestIds_.length, 1, "New request IDs length should be 1");
         assertEq(newRequestIds_[0],     2, "New request ID should be 2");
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 1, "Request IDs length should be 1");
         assertEq(shares_.length,     1, "Shares length should be 1");
@@ -417,7 +417,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(1, lp);
         vm.stopPrank();
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestId1Before_,        1, "Request ID should be 1");
         assertEq(requestId2Before_,        2, "Request ID should be 1");
@@ -452,7 +452,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(newRequestIds_[0],     3, "New request ID should be 3");
         assertEq(newRequestIds_[1],     4, "New request ID should be 4");
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 2, "Request IDs length should be 1");
         assertEq(shares_.length,     2, "Shares length should be 1");
@@ -466,7 +466,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(2, lp);
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIdBefore_,         1, "Request ID should be 1");
         assertEq(requestIdsBefore_.length, 1, "Request IDs length should be 1");
@@ -490,7 +490,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(newRequestIds_.length, 1, "New request IDs length should be 1");
         assertEq(newRequestIds_[0],     1, "New request ID should be 1");
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 1, "Request IDs length should be 1");
         assertEq(shares_.length,     1, "Shares length should be 1");
@@ -504,7 +504,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(2, lp);
         vm.stopPrank();
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestId1Before_,        1, "Request ID should be 1");
         assertEq(requestId2Before_,        2, "Request ID should be 1");
@@ -537,7 +537,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(newRequestIds_[0],     1, "New request ID should be 1");
         assertEq(newRequestIds_[1],     2, "New request ID should be 2");
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 2, "Request IDs length should be 1");
         assertEq(shares_.length,     2, "Shares length should be 1");
@@ -553,7 +553,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(2, lp);
         vm.stopPrank();
 
-        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestId1Before_,        1, "Request ID should be 1");
         assertEq(requestId2Before_,        2, "Request ID should be 1");
@@ -587,7 +587,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(newRequestIds_[0],     3, "New request ID should be 3");
         assertEq(newRequestIds_[1],     2, "New request ID should be 2");
 
-        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requests(lp);
+        (uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 2, "Request IDs length should be 1");
         assertEq(shares_.length,     2, "Shares length should be 1");
