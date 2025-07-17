@@ -38,10 +38,10 @@ contract ViewFunctionsTests is TestBase {
         withdrawalManager.__setRequest(4, lp4, assetsDeposited_);
         withdrawalManager.__setRequest(5, lp1, assetsDeposited_);
 
-        withdrawalManager.__setUserRequestCount(lp1, 2);
-        withdrawalManager.__setUserRequestCount(lp2, 1);
-        withdrawalManager.__setUserRequestCount(lp3, 1);
-        withdrawalManager.__setUserRequestCount(lp4, 1);
+        withdrawalManager.__setUserRequestCount(lp1, 2, assetsDeposited_ * 2);
+        withdrawalManager.__setUserRequestCount(lp2, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
 
         withdrawalManager.__setQueue(1, 5);
 
@@ -92,10 +92,10 @@ contract ViewFunctionsTests is TestBase {
         withdrawalManager.__setRequest(4, lp4, assetsDeposited_);
         withdrawalManager.__setRequest(5, lp1, assetsDeposited_);
 
-        withdrawalManager.__setUserRequestCount(lp1, 2);
-        withdrawalManager.__setUserRequestCount(lp2, 1);
-        withdrawalManager.__setUserRequestCount(lp3, 1);
-        withdrawalManager.__setUserRequestCount(lp4, 1);
+        withdrawalManager.__setUserRequestCount(lp1, 2, assetsDeposited_ * 2);
+        withdrawalManager.__setUserRequestCount(lp2, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
 
         withdrawalManager.__setQueue(1, 5);
 
@@ -145,10 +145,10 @@ contract ViewFunctionsTests is TestBase {
         withdrawalManager.__setRequest(4, lp4, assetsDeposited_);
         withdrawalManager.__setRequest(5, lp, assetsDeposited_);
 
-        withdrawalManager.__setUserRequestCount(lp, 2);
-        withdrawalManager.__setUserRequestCount(lp2, 1);
-        withdrawalManager.__setUserRequestCount(lp3, 1);
-        withdrawalManager.__setUserRequestCount(lp4, 1);
+        withdrawalManager.__setUserRequestCount(lp,  2, assetsDeposited_ * 2);
+        withdrawalManager.__setUserRequestCount(lp2, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
+        withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
 
         withdrawalManager.__setQueue(1, 5);
 

@@ -35,8 +35,9 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         totalShares = totalShares_;
     }
 
-    function __setUserRequestCount(address owner_, uint256 requestCount_) external {
-        requestCount[owner_] = requestCount_;
+    function __setUserRequestCount(address owner_, uint256 requestCount_, uint256 escrowSharesTotal_) external {
+        userRequestSummaries[owner_].requestCount = requestCount_;
+        userRequestSummaries[owner_].escrowedSharesTotal = escrowSharesTotal_;
     }
 
 }

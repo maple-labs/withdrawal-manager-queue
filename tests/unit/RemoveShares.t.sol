@@ -65,11 +65,21 @@ contract RemoveSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, 2);
+
         vm.expectEmit();
         emit RequestDecreased(1, 1);
 
         vm.prank(pm);
         withdrawalManager.removeShares(1, lp);
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, 1);
 
         ( , lastRequestId_ ) = withdrawalManager.queue();
 
@@ -87,6 +97,12 @@ contract RemoveSharesTests is TestBase {
 
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, 2);
+
         vm.expectEmit();
         emit RequestRemoved(1);
 
@@ -103,6 +119,11 @@ contract RemoveSharesTests is TestBase {
         assertEq(owner_,                          address(0));
         assertEq(shares_,                         0);
         assertEq(withdrawalManager.totalShares(), 0);
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
 }

@@ -44,10 +44,11 @@ interface IMapleWithdrawalManagerStorage {
 
     /**
      *  @dev    Returns the number of pending withdrawal requests for a specific user.
-     *  @param  account      Account to retrieve the request count for.
-     *  @return requestCount Amount of requests pending redemption for the user.
+     *  @param  account             Account to retrieve the request count for.
+     *  @return requestCount        Amount of requests pending redemption for the user.
+     *  @return escrowedSharesTotal Total amount of shares escrowed for the user.
      */
-    function requestCount(address account) external view returns (uint256 requestCount);
+    function userRequestSummaries(address account) external view returns (uint256 requestCount, uint256 escrowedSharesTotal);
 
     /**
      *  @dev    Returns the first and last withdrawal requests pending redemption.

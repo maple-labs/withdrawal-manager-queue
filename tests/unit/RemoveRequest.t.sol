@@ -57,6 +57,11 @@ contract RemoveRequestTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, 2);
+
         ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
@@ -90,6 +95,11 @@ contract RemoveRequestTests is TestBase {
         assertEq(lastRequestIdLp_,                0);
         assertEq(lastRequestByOwner_,             0);
         assertEq(withdrawalManager.totalShares(), 0);
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
     function test_removeRequest_multiple_requests_success() external {
@@ -110,6 +120,11 @@ contract RemoveRequestTests is TestBase {
         assertEq(withdrawalManager.totalShares(), 4);
         assertEq(lastRequestId_,                  2);
         assertEq(lastRequestIdLp_,                lastRequestId_);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        2);
+        assertEq(escrowedSharesTotalLp_, 4);
 
         uint128[] memory requestIds = new uint128[](2);
         requestIds[0] = 1;
@@ -137,6 +152,11 @@ contract RemoveRequestTests is TestBase {
         assertEq(lastRequestIdLp_,                0);
         assertEq(lastRequestByOwner_,             0);
         assertEq(withdrawalManager.totalShares(), 0);
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
 }

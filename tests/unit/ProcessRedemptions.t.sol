@@ -86,7 +86,12 @@ contract ProcessRedemptionsTests is TestBase {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCount_,        1);
+        assertEq(escrowedSharesTotal_, sharesLocked);
 
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
@@ -101,6 +106,11 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        ( requestCount_, escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCount_,        0);
+        assertEq(escrowedSharesTotal_, 0);
     }
 
    function test_processRedemptions_manual_multiple_requests() external {
@@ -108,7 +118,12 @@ contract ProcessRedemptionsTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesLocked / 2);
         withdrawalManager.__setRequest(2, lp, sharesLocked / 2);
         withdrawalManager.__setQueue(1, 2);
-        withdrawalManager.__setUserRequestCount(lp, 2);
+        withdrawalManager.__setUserRequestCount(lp, 2, sharesLocked);
+
+        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCount_,        2);
+        assertEq(escrowedSharesTotal_, sharesLocked);
 
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
@@ -124,6 +139,11 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 2, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 3, lastRequestId: 2 });
+
+        ( requestCount_, escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCount_,        0);
+        assertEq(escrowedSharesTotal_, 0);
     }
 
    function test_processRedemptions_manual_multipleLps_multiple_requests() external {
@@ -139,9 +159,22 @@ contract ProcessRedemptionsTests is TestBase {
         withdrawalManager.__setRequest(3, lp3, sharesLocked / 4);
         withdrawalManager.__setRequest(4, lp,  sharesLocked / 4);
         withdrawalManager.__setQueue(1, 4);
-        withdrawalManager.__setUserRequestCount(lp, 2);
-        withdrawalManager.__setUserRequestCount(lp2, 1);
-        withdrawalManager.__setUserRequestCount(lp3, 1);
+        withdrawalManager.__setUserRequestCount(lp,  2, sharesLocked / 2);
+        withdrawalManager.__setUserRequestCount(lp2, 1, sharesLocked / 4);
+        withdrawalManager.__setUserRequestCount(lp3, 1, sharesLocked / 4);
+
+        ( uint256 requestCountLp_,  uint256 escrowedSharesTotalLp_ )  = withdrawalManager.userRequestSummaries(lp);
+        ( uint256 requestCountLp2_, uint256 escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2);
+        ( uint256 requestCountLp3_, uint256 escrowedSharesTotalLp3_ ) = withdrawalManager.userRequestSummaries(lp3);
+
+        assertEq(requestCountLp_,        2);
+        assertEq(escrowedSharesTotalLp_, sharesLocked / 2);
+
+        assertEq(requestCountLp2_,        1);
+        assertEq(escrowedSharesTotalLp2_, sharesLocked / 4);
+
+        assertEq(requestCountLp3_,        1);
+        assertEq(escrowedSharesTotalLp3_, sharesLocked / 4);
 
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(sharesLocked);
@@ -161,13 +194,31 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 4, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 5, lastRequestId: 4 });
+
+        ( requestCountLp_,  escrowedSharesTotalLp_ )  = withdrawalManager.userRequestSummaries(lp);
+        ( requestCountLp2_, escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2);
+        ( requestCountLp3_, escrowedSharesTotalLp3_ ) = withdrawalManager.userRequestSummaries(lp3);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
+
+        assertEq(requestCountLp2_,        0);
+        assertEq(escrowedSharesTotalLp2_, 0);
+
+        assertEq(requestCountLp3_,        0);
+        assertEq(escrowedSharesTotalLp3_, 0);
     }
 
     function test_processRedemptions_manual_partial() external {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked);
 
         // Only half of the liquidity is available.
         asset.burn(address(pool), assetsDeposited / 2);
@@ -189,13 +240,23 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: lp, shares: sharesLocked / 2 });
 
         assertQueue({ nextRequestId: 1, lastRequestId: 1 });
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked / 2);
     }
 
     function test_processRedemptions_manual_overkill() external {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked);
 
         // Add extra liquidity.
         asset.mint(address(pool), assetsDeposited);
@@ -213,12 +274,22 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
     function test_processRedemptions_automatic_complete() external {
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked);
 
         vm.expectEmit();
         emit RequestProcessed(1, lp, sharesLocked, assetsDeposited);
@@ -238,12 +309,22 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
     function test_processRedemptions_automatic_partial() external {
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked);
 
         // Only half of the liquidity is available.
         asset.burn(address(pool), assetsDeposited / 2);
@@ -270,12 +351,22 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: lp, shares: sharesLocked / 2 });
 
         assertQueue({ nextRequestId: 1, lastRequestId: 1 });
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked / 2);
     }
 
     function test_processRedemptions_automatic_overkill() external {
         withdrawalManager.__setRequest(1, lp, sharesLocked);
         withdrawalManager.__setQueue(1, 1);
-        withdrawalManager.__setUserRequestCount(lp, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        1);
+        assertEq(escrowedSharesTotalLp_, sharesLocked);
 
         // Add extra liquidity.
         asset.mint(address(pool), assetsDeposited);
@@ -298,6 +389,11 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 1, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+
+        assertEq(requestCountLp_,        0);
+        assertEq(escrowedSharesTotalLp_, 0);
     }
 
     function test_processRedemptions_multiple() external {
@@ -307,8 +403,17 @@ contract ProcessRedemptionsTests is TestBase {
         withdrawalManager.__setRequest(1, lp1, 100e18);
         withdrawalManager.__setRequest(2, lp2, 150e18);
         withdrawalManager.__setQueue(1, 2);
-        withdrawalManager.__setUserRequestCount(lp1, 1);
-        withdrawalManager.__setUserRequestCount(lp2, 1);
+        withdrawalManager.__setUserRequestCount(lp1, 1, 100e18);
+        withdrawalManager.__setUserRequestCount(lp2, 1, 150e18);
+
+        ( uint256 requestCountLp1_, uint256 escrowedSharesTotalLp1_ ) = withdrawalManager.userRequestSummaries(lp1);
+        ( uint256 requestCountLp2_, uint256 escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2);
+
+        assertEq(requestCountLp1_,        1);
+        assertEq(escrowedSharesTotalLp1_, 100e18);
+
+        assertEq(requestCountLp2_,        1);
+        assertEq(escrowedSharesTotalLp2_, 150e18);
 
         vm.expectEmit();
         emit RequestProcessed(1, lp1, 100e18, 40e18);
@@ -338,6 +443,15 @@ contract ProcessRedemptionsTests is TestBase {
         assertRequest({ requestId: 2, owner: address(0), shares: 0 });
 
         assertQueue({ nextRequestId: 3, lastRequestId: 2 });
+
+        ( requestCountLp1_, escrowedSharesTotalLp1_ ) = withdrawalManager.userRequestSummaries(lp1);
+        ( requestCountLp2_, escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2);
+
+        assertEq(requestCountLp1_,        0);
+        assertEq(escrowedSharesTotalLp1_, 0);
+
+        assertEq(requestCountLp2_,        0);
+        assertEq(escrowedSharesTotalLp2_, 0);
     }
 
 }
@@ -369,10 +483,10 @@ contract ComplexRedemptionTests is TestBase {
         withdrawalManager.__setTotalShares(totalShares_);
         withdrawalManager.__setQueue(2, 6);
 
-        withdrawalManager.__setUserRequestCount(address(2), 1);
-        withdrawalManager.__setUserRequestCount(address(3), 1);
-        withdrawalManager.__setUserRequestCount(address(5), 1);
-        withdrawalManager.__setUserRequestCount(address(6), 1);
+        withdrawalManager.__setUserRequestCount(address(2), 1, 100e18);
+        withdrawalManager.__setUserRequestCount(address(3), 1, 50e18);
+        withdrawalManager.__setUserRequestCount(address(5), 1, 75e18);
+        withdrawalManager.__setUserRequestCount(address(6), 1, 25e18);
 
         vm.expectEmit();
         emit RequestProcessed(2, address(2), 100e18, 40e18);

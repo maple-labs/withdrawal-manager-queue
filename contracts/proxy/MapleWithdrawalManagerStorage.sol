@@ -20,12 +20,17 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
         mapping(uint128 => WithdrawalRequest) requests;  // Maps withdrawal requests to their positions in the queue.
     }
 
+    struct UserRequestSummary {
+        uint256 requestCount;
+        uint256 escrowedSharesTotal;  // Escrowed shares yet to be processed.
+    }
+
     /**************************************************************************************************************************************/
     /*** State Variables                                                                                                                ***/
     /**************************************************************************************************************************************/
 
     uint256 internal _locked;  // Used when checking for reentrancy.
-    
+
     address public override pool;
     address public override poolManager;
 
@@ -39,5 +44,5 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     mapping(address => uint256) public override manualSharesAvailable;  // Shares available to withdraw for a given manual owner.
 
-    mapping(address => uint256) public override requestCount;  // Maps users to the number of pending requests.
+    mapping(address => UserRequestSummary) public override userRequestSummaries;  // Maps users to their request summaries.
 }

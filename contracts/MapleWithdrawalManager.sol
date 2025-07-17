@@ -285,7 +285,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
         queue.requests[lastRequestId_] = WithdrawalRequest(owner_, shares_);
         lastRequestIds[owner_]         = lastRequestId_;
-        requestCount[owner_]++;
+        
+        ++userRequestSummaries[owner_].requestCount;
+        userRequestSummaries[owner_].escrowedSharesTotal += shares_;
 
         // Increase the number of shares locked.
         totalShares += shares_;
@@ -310,6 +312,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(owner_, requestId_);
         } else {
             queue.requests[requestId_].shares = sharesRemaining_;
+            userRequestSummaries[owner_].escrowedSharesTotal -= sharesToRemove_;
 
             emit RequestDecreased(requestId_, sharesToRemove_);
         }
@@ -398,7 +401,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         } else {
             // Update the withdrawal request.
             queue.requests[requestId_].shares = sharesRemaining_;
-
+            userRequestSummaries[request_.owner].escrowedSharesTotal -= processedShares_;
+            
             emit RequestDecreased(requestId_, processedShares_);
         }
 
@@ -416,9 +420,11 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function _removeRequest(address owner_, uint128 requestId_) internal {
+        --userRequestSummaries[owner_].requestCount;
+        userRequestSummaries[owner_].escrowedSharesTotal -= queue.requests[requestId_].shares;
+
         delete lastRequestIds[owner_];
         delete queue.requests[requestId_];
-        requestCount[owner_]--;
 
         emit RequestRemoved(requestId_);
     }
@@ -514,7 +520,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         )
     {
         WithdrawalRequest memory request_;
-        uint256 count_ = requestCount[owner_];
+        uint256 count_ = userRequestSummaries[owner_].requestCount;
         uint256 index_;
         uint256 requestsAdded_;
 
