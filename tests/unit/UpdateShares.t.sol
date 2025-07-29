@@ -99,10 +99,7 @@ contract UpdateSharesSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(1, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -127,20 +124,14 @@ contract UpdateSharesSuccessTests is TestBase {
         assertEq(requestIds_[0],     2, "Request ID should be 2");
         assertEq(shares_[0],         2, "Shares should be 2");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
     }
 
     function test_updateShares_remove_request() external{
         vm.prank(pm);
         uint128 requestId_ = withdrawalManager.addShares(1, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
         vm.prank(lp);
         vm.expectEmit();
@@ -150,20 +141,14 @@ contract UpdateSharesSuccessTests is TestBase {
 
         assertEq(newRequestId_, 0, "Request ID should be 0");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        0);
-        assertEq(escrowedSharesTotalLp_, 0);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
     }
 
     function test_updateShares_decrease() external {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(2, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -187,10 +172,7 @@ contract UpdateSharesSuccessTests is TestBase {
         assertEq(requestIds_[0],     1, "Request ID should be 1");
         assertEq(shares_[0],         1, "Shares should be 1");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
     }
 
     function test_update_shares_multiple_lps_requestsByOwner() external {
@@ -237,20 +219,9 @@ contract UpdateSharesSuccessTests is TestBase {
         vm.stopPrank();
 
 
-        {
-            ( uint256 requestCountLp_,  uint256 escrowedSharesTotalLp_ )  = withdrawalManager.userRequestSummaries(lp);
-            ( uint256 requestCountLp2_, uint256 escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2_);
-            ( uint256 requestCountLp3_, uint256 escrowedSharesTotalLp3_ ) = withdrawalManager.userRequestSummaries(lp3_);
-
-            assertEq(requestCountLp_,        2);
-            assertEq(escrowedSharesTotalLp_, requestAmount1_ + requestAmount2_);
-
-            assertEq(requestCountLp2_,       2);
-            assertEq(escrowedSharesTotalLp2_, requestAmount1_ + requestAmount2_);
-
-            assertEq(requestCountLp3_,       2);
-            assertEq(escrowedSharesTotalLp3_, requestAmount1_ + requestAmount2_);
-        }
+        assertEq(withdrawalManager.userEscrowedShares(lp), requestAmount1_ + requestAmount2_);
+        assertEq(withdrawalManager.userEscrowedShares(lp2_), requestAmount1_ + requestAmount2_);
+        assertEq(withdrawalManager.userEscrowedShares(lp3_), requestAmount1_ + requestAmount2_);
 
         {
             (uint128[] memory requestIdsLp_, uint256[] memory sharesLp_)   = withdrawalManager.requestsByOwner(lp);
@@ -334,20 +305,9 @@ contract UpdateSharesSuccessTests is TestBase {
             assertEq(sharesLp3_[1], requestAmount2_ + 10, "LP3 shares index 1 is incorrect");
         }
 
-        {
-            ( uint256 requestCountLp_,  uint256 escrowedSharesTotalLp_ )  = withdrawalManager.userRequestSummaries(lp);
-            ( uint256 requestCountLp2_, uint256 escrowedSharesTotalLp2_ ) = withdrawalManager.userRequestSummaries(lp2_);
-            ( uint256 requestCountLp3_, uint256 escrowedSharesTotalLp3_ ) = withdrawalManager.userRequestSummaries(lp3_);
-
-            assertEq(requestCountLp_,        2);
-            assertEq(escrowedSharesTotalLp_, requestAmount1_ - 1 + requestAmount2_);
-
-            assertEq(requestCountLp2_,       1);
-            assertEq(escrowedSharesTotalLp2_, requestAmount2_);
-
-            assertEq(requestCountLp3_,       2);
-            assertEq(escrowedSharesTotalLp3_, requestAmount2_ + 10 + requestAmount2_);
-        }
+        assertEq(withdrawalManager.userEscrowedShares(lp), requestAmount1_ - 1 + requestAmount2_);
+        assertEq(withdrawalManager.userEscrowedShares(lp2_), requestAmount2_);
+        assertEq(withdrawalManager.userEscrowedShares(lp3_), requestAmount2_ + 10 + requestAmount2_);
     }
 
 }
@@ -442,10 +402,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(1, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -479,10 +436,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(requestIds_[0],     2, "Request ID should be 2");
         assertEq(shares_[0],         2, "Shares should be 2");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
     }
 
     function test_updateSharesBatch_increase_multiple_requests() external {
@@ -491,10 +445,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(1, lp);
         vm.stopPrank();
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -540,20 +491,14 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(requestIds_[1],     4, "Request ID should be 4");
         assertEq(shares_[1],         3, "Shares should be 3");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 5);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 5);
     }
 
     function test_updateSharesBatch_decrease_single_request() external {
         vm.prank(pm);
         uint128 requestIdBefore_ = withdrawalManager.addShares(2, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -586,10 +531,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(requestIds_[0],     1, "Request ID should be 1");
         assertEq(shares_[0],         1, "Shares should be 1");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
     }
 
     function test_updateSharesBatch_decrease_multiple_requests() external {
@@ -598,10 +540,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(2, lp);
         vm.stopPrank();
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 4);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 4);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -645,10 +584,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(requestIds_[1],     2, "Request ID should be 2");
         assertEq(shares_[1],         1, "Shares should be 1");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
     }
 
     function test_updateSharesBatch_increase_and_decrease_multiple_requests() external {
@@ -657,10 +593,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         uint128 requestId2Before_ = withdrawalManager.addShares(2, lp);
         vm.stopPrank();
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 3);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 3);
 
         (uint128[] memory requestIdsBefore_, uint256[] memory sharesBefore_) = withdrawalManager.requestsByOwner(lp);
 
@@ -705,10 +638,7 @@ contract UpdateSharesBatchSuccessTests is TestBase {
         assertEq(requestIds_[1],     3, "Request ID should be 3");
         assertEq(shares_[1],         2, "Shares should be 2");
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 3);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 3);
     }
 
 }

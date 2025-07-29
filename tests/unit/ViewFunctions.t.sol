@@ -78,60 +78,6 @@ contract ViewFunctionsTests is TestBase {
         assertEq(sharesLp4_[0], assetsDeposited_);
     }
 
-    function test_requests_by_owner_and_range() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
-        address lp4 = makeAddr("lp4");
-
-        uint256 assetsDeposited_ = 100e18;
-
-        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
-        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
-        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
-        withdrawalManager.__setRequest(4, lp4, assetsDeposited_);
-        withdrawalManager.__setRequest(5, lp1, assetsDeposited_);
-
-        withdrawalManager.__setUserRequestCount(lp1, 2, assetsDeposited_ * 2);
-        withdrawalManager.__setUserRequestCount(lp2, 1, assetsDeposited_);
-        withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
-        withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
-
-        withdrawalManager.__setQueue(1, 5);
-
-        (uint128[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requestsByOwnerRange(lp1, 1, 5);
-        (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwnerRange(lp2, 1, 5);
-        (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requestsByOwnerRange(lp3, 1, 5);
-        (uint128[] memory requestIdsLp4_, uint256[] memory sharesLp4_) = withdrawalManager.requestsByOwnerRange(lp4, 1, 5);
-
-
-        assertEq(requestIdsLp1_.length, 2);
-        assertEq(requestIdsLp1_[0], 1);
-        assertEq(requestIdsLp1_[1], 5);
-
-        assertEq(sharesLp1_.length, 2);
-        assertEq(sharesLp1_[0], assetsDeposited_);
-        assertEq(sharesLp1_[1], assetsDeposited_);
-
-        assertEq(requestIdsLp2_.length, 1);
-        assertEq(requestIdsLp2_[0], 2);
-
-        assertEq(sharesLp2_.length, 1);
-        assertEq(sharesLp2_[0], assetsDeposited_);
-
-        assertEq(requestIdsLp3_.length, 1);
-        assertEq(requestIdsLp3_[0], 3);
-
-        assertEq(sharesLp3_.length, 1);
-        assertEq(sharesLp3_[0], assetsDeposited_);
-
-        assertEq(requestIdsLp4_.length, 1);
-        assertEq(requestIdsLp4_[0], 4);
-        
-        assertEq(sharesLp4_.length, 1);
-        assertEq(sharesLp4_[0], assetsDeposited_);
-    }
-
     function test_requests_by_requestId() external {
         address lp2 = makeAddr("lp2");
         address lp3 = makeAddr("lp3");

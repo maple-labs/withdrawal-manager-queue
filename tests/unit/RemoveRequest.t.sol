@@ -57,10 +57,7 @@ contract RemoveRequestTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        1);
-        assertEq(escrowedSharesTotalLp_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
 
@@ -96,18 +93,16 @@ contract RemoveRequestTests is TestBase {
         assertEq(lastRequestByOwner_,             0);
         assertEq(withdrawalManager.totalShares(), 0);
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        0);
-        assertEq(escrowedSharesTotalLp_, 0);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
     }
 
     function test_removeRequest_multiple_requests_success() external {
         uint128 lastRequestIdLp_;
 
         vm.startPrank(pm);
-        withdrawalManager.addShares(2, lp);
-        withdrawalManager.addShares(2, lp);
+        withdrawalManager.addShares(1, lp);
+        withdrawalManager.addShares(1, lp);
+        withdrawalManager.addShares(1, lp);
         vm.stopPrank();
 
         ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
@@ -116,22 +111,15 @@ contract RemoveRequestTests is TestBase {
 
         ( lastRequestIdLp_, ) = getLastRequestByOwner(lp);
 
-        assertEq(shares_,                         2);
-        assertEq(withdrawalManager.totalShares(), 4);
-        assertEq(lastRequestId_,                  2);
+        assertEq(shares_,                         1);
+        assertEq(withdrawalManager.totalShares(), 3);
+        assertEq(lastRequestId_,                  3);
         assertEq(lastRequestIdLp_,                lastRequestId_);
 
-        ( uint256 requestCountLp_, uint256 escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 3);
 
-        assertEq(requestCountLp_,        2);
-        assertEq(escrowedSharesTotalLp_, 4);
-
-        uint128[] memory requestIds = new uint128[](2);
-        requestIds[0] = 1;
-        requestIds[1] = 2;
-
-        vm.expectEmit();
-        emit RequestRemoved(1);
+        uint128[] memory requestIds = new uint128[](1);
+        requestIds[0] = 2;
 
         vm.expectEmit();
         emit RequestRemoved(2);
@@ -146,17 +134,41 @@ contract RemoveRequestTests is TestBase {
         ( lastRequestIdLp_, )            = getLastRequestByOwner(lp);
         ( uint128 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
 
-        assertEq(lastRequestId_,                  2);
+        assertEq(lastRequestId_,                  3);
+        assertEq(shares_,                         1);
+        assertEq(owner_,                          lp);
+        assertEq(lastRequestIdLp_,                3);
+        assertEq(lastRequestByOwner_,             3);
+        assertEq(withdrawalManager.totalShares(), 2);
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
+
+        requestIds = new uint128[](2);
+        requestIds[0] = 1;
+        requestIds[1] = 3;
+
+        vm.expectEmit();
+        emit RequestRemoved(1);
+        emit RequestRemoved(3);
+
+        vm.prank(poolDelegate);
+        withdrawalManager.removeRequest(lp, requestIds);
+
+        ( , lastRequestId_ ) = withdrawalManager.queue();
+
+        ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        ( lastRequestIdLp_, )    = getLastRequestByOwner(lp);
+        ( lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
+
+        assertEq(lastRequestId_,                  3);
         assertEq(shares_,                         0);
         assertEq(owner_,                          address(0));
         assertEq(lastRequestIdLp_,                0);
         assertEq(lastRequestByOwner_,             0);
         assertEq(withdrawalManager.totalShares(), 0);
 
-        ( requestCountLp_, escrowedSharesTotalLp_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCountLp_,        0);
-        assertEq(escrowedSharesTotalLp_, 0);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
     }
 
 }

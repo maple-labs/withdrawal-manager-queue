@@ -86,7 +86,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
-        withdrawalManager.__setLastRequest(lp, 0);
+        withdrawalManager.__setLastRequest(lp, 2);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
 
         assertEq(pool.balanceOf(lp), 0);
@@ -98,8 +98,12 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem);
         assertEq(pool.balanceOf(wm), 0);
 
+        ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
+        assertEq(lastRequestId_, 2);
+
+        assertEq(withdrawalManager.requestIds(lp), lastRequestId_);
+
         assertEq(withdrawalManager.totalShares(),             0);
-        assertEq(withdrawalManager.lastRequestIds(lp),        0);
         assertEq(withdrawalManager.manualSharesAvailable(lp), 0);
 
         assertRequest({ requestId: 1, owner: lp, shares: sharesToRedeem });
@@ -123,9 +127,12 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem / 2);
         assertEq(pool.balanceOf(wm), sharesToRedeem / 2);
 
-        assertEq(withdrawalManager.totalShares(), sharesToRedeem / 2);
+        ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
+        assertEq(lastRequestId_, 1);
 
-        assertEq(withdrawalManager.lastRequestIds(lp), 1);
+        assertEq(withdrawalManager.requestIds(lp), lastRequestId_);
+
+        assertEq(withdrawalManager.totalShares(), sharesToRedeem / 2);
 
         assertRequest({ requestId: 1, owner: lp, shares: sharesToRedeem / 2 });
     }

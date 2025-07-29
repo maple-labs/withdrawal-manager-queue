@@ -3,6 +3,8 @@ pragma solidity ^0.8.7;
 
 import { MapleWithdrawalManager } from "../../contracts/MapleWithdrawalManager.sol";
 
+import { SortedArray } from "../../contracts/utils/SortedArray.sol";
+
 contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
 
     function locked() external view returns (uint256) {
@@ -18,7 +20,8 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setLastRequest(address owner_, uint128 requestId_) external {
-        lastRequestIds[owner_] = requestId_;
+        SortedArray.push(userRequests[owner_], requestId_);
+        queue.lastRequestId = requestId_;
     }
 
     function __setQueue(uint128 nextRequestId_, uint128 lastRequestId_) external {
@@ -27,8 +30,10 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setRequest(uint128 requestId_, address owner_, uint256 shares_) external {
+        queue.lastRequestId        = requestId_;
         queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
-        lastRequestIds[owner_] = requestId_;
+
+        SortedArray.push(userRequests[owner_], requestId_);
     }
 
     function __setTotalShares(uint256 totalShares_) external {
@@ -36,8 +41,49 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setUserRequestCount(address owner_, uint256 requestCount_, uint256 escrowSharesTotal_) external {
-        userRequestSummaries[owner_].requestCount = requestCount_;
-        userRequestSummaries[owner_].escrowedSharesTotal = escrowSharesTotal_;
+        uint256 currentRequestCount_ = SortedArray.length(userRequests[owner_]);
+
+        if (requestCount_ < currentRequestCount_) {
+            for (uint256 i = requestCount_; i < currentRequestCount_; i++) {
+                SortedArray.remove(userRequests[owner_], uint128(i));
+            }
+        } else {
+            for (uint256 i = currentRequestCount_; i > requestCount_; i++) {
+                SortedArray.push(userRequests[owner_], uint128(i));
+            }
+        }
+
+        userEscrowedShares[owner_] = escrowSharesTotal_;
+    }
+
+}
+
+contract SortedArrayHarness {
+
+    SortedArray.Array array;
+
+    function push(uint128 value_) external {
+        SortedArray.push(array, value_);
+    }
+
+    function remove(uint128 value_) external {
+        SortedArray.remove(array, value_);
+    }
+
+    function get(uint256 index_) external view returns (uint128) {
+        return SortedArray.get(array, index_);
+    }
+
+    function length() external view returns (uint256) {
+        return SortedArray.length(array);
+    }
+
+    function getAllValues() external view returns (uint128[] memory) {
+        return SortedArray.getAllValues(array);
+    }
+
+    function getLast() external view returns (uint128) {
+        return SortedArray.getLast(array);
     }
 
 }

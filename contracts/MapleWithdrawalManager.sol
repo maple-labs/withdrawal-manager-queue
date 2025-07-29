@@ -16,6 +16,8 @@ import {
 
 import { MapleWithdrawalManagerStorage } from "./proxy/MapleWithdrawalManagerStorage.sol";
 
+import { SortedArray } from "./utils/SortedArray.sol";
+
 /*
 
     ███╗   ███╗ █████╗ ██████╗ ██╗     ███████╗
@@ -152,9 +154,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function removeShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 sharesReturned_) {
-        require(shares_ > 0,    "WM:RS:ZERO_SHARES");
+        require(shares_ > 0, "WM:RS:ZERO_SHARES");
 
-        uint128 lastRequestId_ = lastRequestIds[owner_];
+        uint128 lastRequestId_ = SortedArray.getLast(userRequests[owner_]);
 
         require(lastRequestId_ > 0, "WM:RS:NO_REQUESTS");
 
@@ -284,10 +286,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         lastRequestId_ = ++queue.lastRequestId;
 
         queue.requests[lastRequestId_] = WithdrawalRequest(owner_, shares_);
-        lastRequestIds[owner_]         = lastRequestId_;
-        
-        ++userRequestSummaries[owner_].requestCount;
-        userRequestSummaries[owner_].escrowedSharesTotal += shares_;
+        userEscrowedShares[owner_]    += shares_;
+
+        SortedArray.push(userRequests[owner_], lastRequestId_);
 
         // Increase the number of shares locked.
         totalShares += shares_;
@@ -312,7 +313,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(owner_, requestId_);
         } else {
             queue.requests[requestId_].shares = sharesRemaining_;
-            userRequestSummaries[owner_].escrowedSharesTotal -= sharesToRemove_;
+            userEscrowedShares[owner_]       -= sharesToRemove_;
 
             emit RequestDecreased(requestId_, sharesToRemove_);
         }
@@ -400,9 +401,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(request_.owner, requestId_);
         } else {
             // Update the withdrawal request.
-            queue.requests[requestId_].shares = sharesRemaining_;
-            userRequestSummaries[request_.owner].escrowedSharesTotal -= processedShares_;
-            
+            queue.requests[requestId_].shares   = sharesRemaining_;
+            userEscrowedShares[request_.owner] -= processedShares_;
+
             emit RequestDecreased(requestId_, processedShares_);
         }
 
@@ -420,10 +421,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function _removeRequest(address owner_, uint128 requestId_) internal {
-        --userRequestSummaries[owner_].requestCount;
-        userRequestSummaries[owner_].escrowedSharesTotal -= queue.requests[requestId_].shares;
-
-        delete lastRequestIds[owner_];
+        userEscrowedShares[owner_] -= queue.requests[requestId_].shares;
+        SortedArray.remove(userRequests[owner_], requestId_);
         delete queue.requests[requestId_];
 
         emit RequestRemoved(requestId_);
@@ -499,50 +498,21 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         return ( redeemableAssets_, resultingShares_ );  // NOTE: Withdrawal not implemented use redeem instead
     }
 
+    function requestIds(address owner_) external view override returns (uint128 requestId_) {
+        requestId_ = SortedArray.getLast(userRequests[owner_]);
+    }
+
     function requests(uint128 requestId_) external view override returns (address owner_, uint256 shares_) {
         owner_  = queue.requests[requestId_].owner;
         shares_ = queue.requests[requestId_].shares;
     }
 
-    function requestsByOwner(address owner_)
-        external view override returns (
-            uint128[] memory requestIds_,
-            uint256[] memory shares_
-        )
-    {
-        ( requestIds_, shares_ ) = requestsByOwnerRange(owner_, queue.nextRequestId, queue.lastRequestId);
-    }
+    function requestsByOwner(address owner_) external view override returns (uint128[] memory requestIds_, uint256[] memory shares_) {
+        requestIds_ = SortedArray.getAllValues(userRequests[owner_]);
+        shares_     = new uint256[](requestIds_.length);
 
-    function requestsByOwnerRange(address owner_, uint128 firstRequestId_, uint128 lastRequestId_)
-        public view override returns (
-            uint128[] memory requestIds_,
-            uint256[] memory shares_
-        )
-    {
-        WithdrawalRequest memory request_;
-        uint256 count_ = userRequestSummaries[owner_].requestCount;
-        uint256 index_;
-        uint256 requestsAdded_;
-
-        requestIds_    = new uint128[](count_);
-        shares_        = new uint256[](count_);
-
-        while (firstRequestId_ <= lastRequestId_) {
-
-            if(requestsAdded_ == count_) {
-                break;
-            }
-
-            request_ = queue.requests[firstRequestId_];
-
-            if (request_.owner == owner_) {
-                requestIds_[index_] = firstRequestId_;
-                shares_[index_]     = request_.shares;
-                ++index_;
-                ++requestsAdded_;
-            }
-
-            ++firstRequestId_;
+        for (uint256 i = 0; i < requestIds_.length; ++i) {
+            shares_[i] = queue.requests[requestIds_[i]].shares;
         }
     }
 

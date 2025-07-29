@@ -39,10 +39,7 @@ contract AddSharesTests is TestBase {
 
         assertEq(lastRequestId_, 2);
 
-        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCount_,        2);
-        assertEq(escrowedSharesTotal_, 2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
 
@@ -80,10 +77,7 @@ contract AddSharesTests is TestBase {
 
         assertEq(lastRequestId_, 1);
 
-        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCount_,        1);
-        assertEq(escrowedSharesTotal_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
     }
 
     function test_addShares_newRequestAddedToQueue_manual() external {
@@ -103,10 +97,7 @@ contract AddSharesTests is TestBase {
 
         assertEq(lastRequestId_, 1);
 
-        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCount_,        1);
-        assertEq(escrowedSharesTotal_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
     }
 
     function test_addShares_success() external {
@@ -122,10 +113,7 @@ contract AddSharesTests is TestBase {
 
         assertEq(lastRequestId_, 1);
 
-        ( uint256 requestCount_, uint256 escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCount_,        1);
-        assertEq(escrowedSharesTotal_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
         ( requestId_,) = getLastRequestByOwner(owner_);
@@ -146,10 +134,7 @@ contract AddSharesTests is TestBase {
 
         assertEq(lastRequestId_, 2);
 
-        ( requestCount_, escrowedSharesTotal_ ) = withdrawalManager.userRequestSummaries(lp);
-
-        assertEq(requestCount_,        1);
-        assertEq(escrowedSharesTotal_, 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
         ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
 

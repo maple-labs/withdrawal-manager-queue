@@ -10,6 +10,8 @@ import { MapleWithdrawalManagerInitializer } from "../../contracts/proxy/MapleWi
 import { MapleWithdrawalManagerHarness }                       from "./Harnesses.sol";
 import { MockFactory, MockGlobals, MockPool, MockPoolManager } from "./Mocks.sol";
 
+import { SortedArrayHarness } from "./Harnesses.sol";
+
 contract TestBase is Test {
 
     address internal governor         = makeAddr("governor");
@@ -92,3 +94,28 @@ contract TestBase is Test {
     }
 
 }
+
+contract SortedArrayTestBase is Test {
+
+    SortedArrayHarness public array;
+
+    function setUp() public virtual {
+        array = new SortedArrayHarness();
+    }
+
+    function assertArray(uint128[] memory values) internal {
+        assertEq(array.length(), values.length);
+
+        uint128[] memory arrayValues = array.getAllValues();
+
+        for (uint256 i = 0; i < values.length; i++) {
+            assertEq(arrayValues[i], values[i]);
+        }
+    }
+
+    function assertElementAtIndex(uint256 index, uint128 value) internal {
+        assertEq(array.get(index), value);
+    }
+
+}
+

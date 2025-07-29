@@ -3,6 +3,8 @@ pragma solidity ^0.8.7;
 
 import { IMapleWithdrawalManagerStorage } from "../interfaces/IMapleWithdrawalManagerStorage.sol";
 
+import { SortedArray } from "../utils/SortedArray.sol";
+
 contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     /**************************************************************************************************************************************/
@@ -20,11 +22,6 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
         mapping(uint128 => WithdrawalRequest) requests;  // Maps withdrawal requests to their positions in the queue.
     }
 
-    struct UserRequestSummary {
-        uint256 requestCount;
-        uint256 escrowedSharesTotal;  // Escrowed shares yet to be processed.
-    }
-
     /**************************************************************************************************************************************/
     /*** State Variables                                                                                                                ***/
     /**************************************************************************************************************************************/
@@ -40,9 +37,12 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     mapping(address => bool) public override isManualWithdrawal;  // Defines which users use automated withdrawals (false by default).
 
-    mapping(address => uint128) public override lastRequestIds;  // Maps users to their last withdrawal request.
+    mapping(address => uint128) internal __deprecated_requestIds;  // Maps users to their last withdrawal request.
 
     mapping(address => uint256) public override manualSharesAvailable;  // Shares available to withdraw for a given manual owner.
 
-    mapping(address => UserRequestSummary) public override userRequestSummaries;  // Maps users to their request summaries.
+    mapping(address => uint256) public override userEscrowedShares;  // Maps users to their escrowed shares yet to be processed.
+
+    mapping(address => SortedArray.Array) internal userRequests;  // Maps users to their withdrawal requests.
+
 }

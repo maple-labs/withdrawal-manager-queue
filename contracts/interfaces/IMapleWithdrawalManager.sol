@@ -209,6 +209,14 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function previewWithdraw(address owner, uint256 assets) external view returns (uint256 redeemableAssets, uint256 resultingShares);
 
     /**
+     *  @dev    Returns the last request id for a given owner.
+     *          Function must exist for backwards compatibility with the old implementation where we supported only one request per owner.
+     *  @param  owner          The account to check the last request id for.
+     *  @return requestId      The id of the last valid withdrawal request for the account.
+     */
+    function requestIds(address owner) external view returns (uint128 requestId);
+
+    /**
      *  @dev    Returns the owner and amount of shares associated with a withdrawal request.
      *  @param  requestId Identifier of the withdrawal request.
      *  @return owner     Address of the share owner.
@@ -224,21 +232,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return shares     Array of shares associated with each request.
      */
     function requestsByOwner(address owner) external view returns (uint128[] memory requestIds, uint256[] memory shares);
-
-    /**
-     *  @dev    Returns the pending requests by owner and request ID range.
-     *          Only returns requests that belong to the specified owner.
-     *  @param  owner          Address of the account to check for pending requests.
-     *  @param  firstRequestId First request ID to include in the result.
-     *  @param  lastRequestId  Last request ID to include in the result.
-     *  @return requestIds     Array of request identifiers.
-     *  @return shares         Array of shares associated with each request.
-     */
-    function requestsByOwnerRange(address owner, uint128 firstRequestId, uint128 lastRequestId)
-        external view returns (
-            uint128[] memory requestIds,
-            uint256[] memory shares
-        );
 
     /**
      *  @dev   Returns the address of the security admin.
