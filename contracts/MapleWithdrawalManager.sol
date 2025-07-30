@@ -156,15 +156,17 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     function removeShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 sharesReturned_) {
         require(shares_ > 0, "WM:RS:ZERO_SHARES");
 
-        uint128 lastRequestId_ = SortedArray.getLast(userRequests[owner_]);
+        uint256 totalEscrowedShares_ = userEscrowedShares[owner_];
 
-        require(lastRequestId_ > 0, "WM:RS:NO_REQUESTS");
+        require(totalEscrowedShares_ >= shares_, "WM:RS:INSUFFICIENT_SHARES");
 
-        WithdrawalRequest memory request_ = queue.requests[lastRequestId_];
+        while (sharesReturned_ < shares_) {
+            uint128 requestId_                = SortedArray.getLast(userRequests[owner_]);
+            WithdrawalRequest memory request_ = queue.requests[requestId_];
 
-        require(request_.shares >= shares_, "WM:RS:INSUFFICIENT_SHARES");
-
-        sharesReturned_ = _removeShares(lastRequestId_, shares_, request_.owner, request_.shares);
+            uint256 sharesToRemove_ = _min(shares_ - sharesReturned_, request_.shares);
+            sharesReturned_        += _removeShares(requestId_, sharesToRemove_, owner_, request_.shares);
+        }
     }
 
     /**************************************************************************************************************************************/
