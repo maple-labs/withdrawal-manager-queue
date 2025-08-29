@@ -29,6 +29,15 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         queue.lastRequestId = lastRequestId_;
     }
 
+    function __setRequestLegacy(uint128 requestId_, address owner_, uint256 shares_) external {
+        // Used to setup the withdrawal manager storage in the old format.
+        // This function is only used to unit test the migrator so we can setup wm storage without pushing to the sorted array.
+        queue.lastRequestId        = requestId_;
+        queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
+
+        __deprecated_requestIds[owner_] = requestId_;
+    }
+
     function __setRequest(uint128 requestId_, address owner_, uint256 shares_) external {
         queue.lastRequestId        = requestId_;
         queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
