@@ -9,7 +9,7 @@ contract RemoveTests is SortedArrayTestBase {
         array.push(1);
         array.remove(1);
 
-        uint128[] memory expectedValues = new uint128[](0);
+        uint256[] memory expectedValues = new uint256[](0);
         assertArray(expectedValues);
 
         assertEq(array.length(), 0);
@@ -22,7 +22,7 @@ contract RemoveTests is SortedArrayTestBase {
 
         array.remove(2);
 
-        uint128[] memory expectedValues = new uint128[](2);
+        uint256[] memory expectedValues = new uint256[](2);
         expectedValues[0]               = 1;
         expectedValues[1]               = 3;
 
@@ -34,7 +34,7 @@ contract RemoveTests is SortedArrayTestBase {
 
         array.remove(1);
 
-        expectedValues    = new uint128[](1);
+        expectedValues    = new uint256[](1);
         expectedValues[0] = 3;
 
         assertArray(expectedValues);
@@ -44,7 +44,7 @@ contract RemoveTests is SortedArrayTestBase {
 
         array.remove(3);
 
-        assertArray(new uint128[](0));
+        assertArray(new uint256[](0));
         assertEq(array.length(), 0);
     }
 

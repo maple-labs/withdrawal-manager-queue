@@ -73,22 +73,22 @@ contract TestBase is Test {
         wm = address(withdrawalManager);
     }
 
-    function assertRequest(uint128 requestId, address owner, uint256 shares) internal {
+    function assertRequest(uint256 requestId, address owner, uint256 shares) internal {
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(requestId);
 
         assertEq(owner_,  owner);
         assertEq(shares_, shares);
     }
 
-    function assertQueue(uint128 nextRequestId, uint128 lastRequestId) internal {
-        ( uint128 nextRequestId_, uint128 lastRequestId_ ) = withdrawalManager.queue();
+    function assertQueue(uint256 nextRequestId, uint256 lastRequestId) internal {
+        ( uint256 nextRequestId_, uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(nextRequestId_, nextRequestId);
         assertEq(lastRequestId_, lastRequestId);
     }
 
-    function getLastRequestByOwner(address owner) internal view returns (uint128 lastRequestId, uint256 shares) {
-        ( uint128[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(owner);
+    function getLastRequestByOwner(address owner) internal view returns (uint256 lastRequestId, uint256 shares) {
+        ( uint256[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(owner);
 
         return requestIds_.length == 0 ? (0,0) : (requestIds_[requestIds_.length - 1], shares_[shares_.length - 1]);
     }
@@ -103,17 +103,17 @@ contract SortedArrayTestBase is Test {
         array = new SortedArrayHarness();
     }
 
-    function assertArray(uint128[] memory values) internal {
+    function assertArray(uint256[] memory values) internal {
         assertEq(array.length(), values.length);
 
-        uint128[] memory arrayValues = array.getAllValues();
+        uint256[] memory arrayValues = array.getAllValues();
 
         for (uint256 i = 0; i < values.length; i++) {
             assertEq(arrayValues[i], values[i]);
         }
     }
 
-    function assertElementAtIndex(uint256 index, uint128 value) internal {
+    function assertElementAtIndex(uint256 index, uint256 value) internal {
         assertEq(array.get(index), value);
     }
 

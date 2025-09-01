@@ -133,7 +133,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** State-Changing Functions - OnlyPoolManager                                                                                     ***/
     /**************************************************************************************************************************************/
 
-    function addShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint128 lastRequestId_) {
+    function addShares(uint256 shares_, address owner_) external override onlyPoolManager returns (uint256 lastRequestId_) {
         require(shares_ > 0, "WM:AS:ZERO_SHARES");
 
         lastRequestId_ = _addRequest(owner_, shares_);
@@ -161,8 +161,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         require(totalEscrowedShares_ >= shares_, "WM:RS:INSUFFICIENT_SHARES");
 
         while (sharesReturned_ < shares_) {
-            uint128 requestId_                = SortedArray.getLast(userRequests[owner_]);
-            WithdrawalRequest memory request_ = queue.requests[requestId_];
+            uint256 requestId_                = SortedArray.getLast(userRequests[owner_]);
+            WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
             uint256 sharesToRemove_ = _min(shares_ - sharesReturned_, request_.shares);
             sharesReturned_        += _removeShares(requestId_, sharesToRemove_, owner_, request_.shares);
@@ -181,8 +181,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         // Revert if there are insufficient assets to redeem all shares.
         require(maxSharesToProcess_ == redeemableShares_, "WM:PR:LOW_LIQUIDITY");
 
-        uint128 nextRequestId_ = queue.nextRequestId;
-        uint128 lastRequestId_ = queue.lastRequestId;
+        uint256 nextRequestId_ = queue.nextRequestId;
+        uint256 lastRequestId_ = queue.lastRequestId;
 
         // Iterate through the loop and process as many requests as possible.
         // Stop iterating when there are no more shares to process or if you have reached the end of the queue.
@@ -199,7 +199,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         }
 
         // Adjust the new start of the queue.
-        queue.nextRequestId = nextRequestId_;
+        queue.nextRequestId = _toUint128(nextRequestId_);
     }
 
     /**************************************************************************************************************************************/
@@ -208,7 +208,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
     function removeRequest(
         address owner_,
-        uint128[] calldata requestIds_
+        uint256[] calldata requestIds_
     ) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins
     {
         require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
@@ -219,7 +219,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         WithdrawalRequest memory withdrawalRequest_;
 
         for (uint256 i = 0; i < requestIds_.length; ++i) {
-            withdrawalRequest_ = queue.requests[requestIds_[i]];
+            withdrawalRequest_ = queue.requests[_toUint128(requestIds_[i])];
 
             require(withdrawalRequest_.shares > 0,      "WM:RR:NOT_IN_QUEUE");
             require(withdrawalRequest_.owner == owner_, "WM:RR:NOT_OWNER");
@@ -245,11 +245,11 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /**************************************************************************************************************************************/
 
     function updateShares(
-        uint128 requestId_,
+        uint256 requestId_,
         uint256 newSharesTotal_
-    ) public override whenProtocolNotPaused nonReentrant returns (uint128 updatedRequestId_)
+    ) public override whenProtocolNotPaused nonReentrant returns (uint256 updatedRequestId_)
     {
-        WithdrawalRequest memory request_ = queue.requests[requestId_];
+        WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
         require(request_.owner != address(0),       "WM:US:INVALID_REQUEST");
         require(request_.owner == msg.sender,       "WM:US:NOT_OWNER");
@@ -267,9 +267,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function updateSharesBatch(
-        uint128[] memory requestIds_,
+        uint256[] memory requestIds_,
         uint256[] calldata newSharesTotals_
-    ) external override whenProtocolNotPaused returns (uint128[] memory updatedRequestIds_)
+    ) external override whenProtocolNotPaused returns (uint256[] memory updatedRequestIds_)
     {
         require(requestIds_.length == newSharesTotals_.length, "WM:USB:ARRAY_LENGTH_MISMATCH");
 
@@ -284,10 +284,10 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** Internal Functions                                                                                                             ***/
     /**************************************************************************************************************************************/
 
-    function _addRequest(address owner_, uint256 shares_) internal returns (uint128 lastRequestId_) {
+    function _addRequest(address owner_, uint256 shares_) internal returns (uint256 lastRequestId_) {
         lastRequestId_ = ++queue.lastRequestId;
 
-        queue.requests[lastRequestId_] = WithdrawalRequest(owner_, shares_);
+        queue.requests[_toUint128(lastRequestId_)] = WithdrawalRequest(owner_, shares_);
         userEscrowedShares[owner_]    += shares_;
 
         SortedArray.push(userRequests[owner_], lastRequestId_);
@@ -300,7 +300,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         emit RequestCreated(lastRequestId_, owner_, shares_);
     }
 
-    function _removeShares(uint128 requestId_,
+    function _removeShares(uint256 requestId_,
         uint256 sharesToRemove_,
         address owner_,
         uint256 currentShares_
@@ -314,7 +314,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         if (sharesRemaining_ == 0) {
             _removeRequest(owner_, requestId_);
         } else {
-            queue.requests[requestId_].shares = sharesRemaining_;
+            queue.requests[_toUint128(requestId_)].shares = sharesRemaining_;
             userEscrowedShares[owner_]       -= sharesToRemove_;
 
             emit RequestDecreased(requestId_, sharesToRemove_);
@@ -370,7 +370,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function _processRequest(
-        uint128 requestId_,
+        uint256 requestId_,
         uint256 maximumSharesToProcess_
     )
         internal returns (
@@ -378,7 +378,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             bool    isProcessed_
         )
     {
-        WithdrawalRequest memory request_ = queue.requests[requestId_];
+        WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
         // If the request has already been cancelled, skip it.
         if (request_.owner == address(0)) return (0, true);
@@ -403,7 +403,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(request_.owner, requestId_);
         } else {
             // Update the withdrawal request.
-            queue.requests[requestId_].shares   = sharesRemaining_;
+            queue.requests[_toUint128(requestId_)].shares = sharesRemaining_;
             userEscrowedShares[request_.owner] -= processedShares_;
 
             emit RequestDecreased(requestId_, processedShares_);
@@ -422,12 +422,17 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         }
     }
 
-    function _removeRequest(address owner_, uint128 requestId_) internal {
-        userEscrowedShares[owner_] -= queue.requests[requestId_].shares;
+    function _removeRequest(address owner_, uint256 requestId_) internal {
+        userEscrowedShares[owner_] -= queue.requests[_toUint128(requestId_)].shares;
         SortedArray.remove(userRequests[owner_], requestId_);
-        delete queue.requests[requestId_];
+        delete queue.requests[_toUint128(requestId_)];
 
         emit RequestRemoved(requestId_);
+    }
+
+    function _toUint128(uint256 input_) internal pure returns (uint128 output_) {
+        require(input_ <= uint256(type(uint128).max), "WM:TU:UINT256_CAST");
+        output_ = uint128(input_);
     }
 
     /**************************************************************************************************************************************/
@@ -500,21 +505,21 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         return ( redeemableAssets_, resultingShares_ );  // NOTE: Withdrawal not implemented use redeem instead
     }
 
-    function requestIds(address owner_) external view override returns (uint128 requestId_) {
+    function requestIds(address owner_) external view override returns (uint256 requestId_) {
         requestId_ = SortedArray.getLast(userRequests[owner_]);
     }
 
-    function requests(uint128 requestId_) external view override returns (address owner_, uint256 shares_) {
-        owner_  = queue.requests[requestId_].owner;
-        shares_ = queue.requests[requestId_].shares;
+    function requests(uint256 requestId_) external view override returns (address owner_, uint256 shares_) {
+        owner_  = queue.requests[_toUint128(requestId_)].owner;
+        shares_ = queue.requests[_toUint128(requestId_)].shares;
     }
 
-    function requestsByOwner(address owner_) external view override returns (uint128[] memory requestIds_, uint256[] memory shares_) {
+    function requestsByOwner(address owner_) external view override returns (uint256[] memory requestIds_, uint256[] memory shares_) {
         requestIds_ = SortedArray.getAllValues(userRequests[owner_]);
         shares_     = new uint256[](requestIds_.length);
 
         for (uint256 i = 0; i < requestIds_.length; ++i) {
-            shares_[i] = queue.requests[requestIds_[i]].shares;
+            shares_[i] = queue.requests[_toUint128(requestIds_[i])].shares;
         }
     }
 

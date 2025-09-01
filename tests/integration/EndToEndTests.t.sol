@@ -6,7 +6,7 @@ import { console, TestBase } from "../utils/TestBase.sol";
 contract EndToEndTests is TestBase {
 
     // Helper storage variable for fuzz test
-    mapping(uint128 => address) lpsRequest;
+    mapping(uint256 => address) lpsRequest;
     mapping(address => bool)    manualLps;
     mapping(address => uint256) lpShares;
 
@@ -26,7 +26,7 @@ contract EndToEndTests is TestBase {
 
         uint256 totalInitialShares = shares1 + shares2 + shares3;
 
-        uint128 requestId_;
+        uint256 requestId_;
 
         // Simulate shares being sent to PM
         pool.mint(pm, totalInitialShares);
@@ -134,8 +134,8 @@ contract EndToEndTests is TestBase {
 
     function testFuzz_fullFLow_fixedExchangeRate(address[10] memory lps, bool[10] memory isManual, uint256[10] memory shares) external {
         uint256 totalShares;
-        uint128 inQueue;
-        uint128 requestId_;
+        uint256 inQueue;
+        uint256 requestId_;
 
         // Iterate through all users and add shares to pool manager
         for (uint256 i = 0; i < 10; i++) {
@@ -178,12 +178,12 @@ contract EndToEndTests is TestBase {
         withdrawalManager.processRedemptions(sharesToProcess);
 
         // To avoid doing the same iteration as the function `processRedemptions`, fetch the queue state, then check it's integrity.
-        ( uint128 nextRequestId_, uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( uint256 nextRequestId_, uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         uint256 sharesProcessed;
 
         // First, check that the requests processes are correct
-        for (uint128 i = 1; i < nextRequestId_; i++) {
+        for (uint256 i = 1; i < nextRequestId_; i++) {
             address lp = lpsRequest[i];
 
             assertRequest({ requestId: i, shares: 0, owner: address(0) });
@@ -205,7 +205,7 @@ contract EndToEndTests is TestBase {
         }
 
         // Finally, check that all subsequent requests are still on the queue.
-        for (uint128 i = nextRequestId_ + 1; i <= lastRequestId_; i++) {
+        for (uint256 i = nextRequestId_ + 1; i <= lastRequestId_; i++) {
             address lp = lpsRequest[i];
 
             assertRequest({ requestId: i, shares: lpShares[lp], owner: lp });

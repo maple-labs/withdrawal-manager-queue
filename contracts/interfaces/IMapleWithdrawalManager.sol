@@ -38,14 +38,14 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param owner     Address of the owner of the shares.
      *  @param shares    Amount of shares requested for redemption.
      */
-    event RequestCreated(uint128 indexed requestId, address indexed owner, uint256 shares);
+    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
 
     /**
      *  @dev   Emitted when a withdrawal request is updated.
      *  @param requestId Identifier of the withdrawal request.
      *  @param shares    Amount of shares reduced during a redemption request.
      */
-    event RequestDecreased(uint128 indexed requestId, uint256 shares);
+    event RequestDecreased(uint256 indexed requestId, uint256 shares);
 
     /**
      *  @dev   Emitted when a withdrawal request is processed.
@@ -54,13 +54,13 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param shares    Amount of redeemable shares.
      *  @param assets    Amount of withdrawable assets.
      */
-    event RequestProcessed(uint128 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
+    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
 
     /**
      *  @dev   Emitted when a withdrawal request is removed.
      *  @param requestId Identifier of the withdrawal request.
      */
-    event RequestRemoved(uint128 indexed requestId);
+    event RequestRemoved(uint256 indexed requestId);
 
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
@@ -71,7 +71,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param shares Amount of shares to add.
      *  @param owner  Address of the owner of shares.
      */
-    function addShares(uint256 shares, address owner) external returns (uint128 lastRequestId);
+    function addShares(uint256 shares, address owner) external returns (uint256 lastRequestId);
 
     /**
      *  @dev    Processes a withdrawal request.
@@ -105,7 +105,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param owner      Address of the owner of shares.
      *  @param requestIds Array of identifiers of the withdrawal requests to remove.
      */
-    function removeRequest(address owner, uint128[] calldata requestIds) external;
+    function removeRequest(address owner, uint256[] calldata requestIds) external;
 
     /**
      *  @dev   Defines if an account will withdraw shares manually or automatically.
@@ -125,7 +125,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param  newSharesTotal   New total amount of shares pending redemption.
      *  @return currentRequestId Identifier of the withdrawal request that was updated or created.
      */
-    function updateShares(uint128 requestId, uint256 newSharesTotal) external returns (uint128 currentRequestId);
+    function updateShares(uint256 requestId, uint256 newSharesTotal) external returns (uint256 currentRequestId);
 
     /**
      *  @dev    Updates the total amount of shares pending redemption in batch.
@@ -134,9 +134,9 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return currentRequestIds Array of identifiers of the withdrawal requests that were updated or created.
      */
     function updateSharesBatch(
-        uint128[] calldata requestIds,
+        uint256[] calldata requestIds,
         uint256[] calldata newSharesTotals
-    ) external returns (uint128[] memory currentRequestIds);
+    ) external returns (uint256[] memory currentRequestIds);
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
@@ -214,7 +214,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param  owner          The account to check the last request id for.
      *  @return requestId      The id of the last valid withdrawal request for the account.
      */
-    function requestIds(address owner) external view returns (uint128 requestId);
+    function requestIds(address owner) external view returns (uint256 requestId);
 
     /**
      *  @dev    Returns the owner and amount of shares associated with a withdrawal request.
@@ -222,7 +222,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return owner     Address of the share owner.
      *  @return shares    Amount of shares pending redemption.
      */
-    function requests(uint128 requestId) external view returns (address owner, uint256 shares);
+    function requests(uint256 requestId) external view returns (address owner, uint256 shares);
 
     /**
      *  @dev    Returns the pending requests by owner.
@@ -231,7 +231,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return requestIds Array of request identifiers.
      *  @return shares     Array of shares associated with each request.
      */
-    function requestsByOwner(address owner) external view returns (uint128[] memory requestIds, uint256[] memory shares);
+    function requestsByOwner(address owner) external view returns (uint256[] memory requestIds, uint256[] memory shares);
 
     /**
      *  @dev   Returns the address of the security admin.

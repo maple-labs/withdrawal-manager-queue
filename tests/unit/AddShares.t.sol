@@ -5,7 +5,7 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract AddSharesTests is TestBase {
 
-    event RequestCreated(uint128 indexed requestId, address indexed owner, uint256 shares);
+    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
 
     function setUp() public override {
         super.setUp();
@@ -35,7 +35,7 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 2);
 
@@ -46,7 +46,7 @@ contract AddSharesTests is TestBase {
         assertEq(owner_, lp);
         assertEq(shares_, 1);
 
-        (uint128[] memory requestIds, uint256[] memory requestShares) = withdrawalManager.requestsByOwner(lp);
+        (uint256[] memory requestIds, uint256[] memory requestShares) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds.length, 2);
         assertEq(requestShares.length, 2);
@@ -63,7 +63,7 @@ contract AddSharesTests is TestBase {
     }
 
     function test_addShares_newRequestAddedToQueue() external {
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 0);
 
@@ -83,7 +83,7 @@ contract AddSharesTests is TestBase {
     function test_addShares_newRequestAddedToQueue_manual() external {
         withdrawalManager.__setManualWithdrawal(lp, true);
 
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 0);
 
@@ -101,7 +101,7 @@ contract AddSharesTests is TestBase {
     }
 
     function test_addShares_success() external {
-        uint128 requestId_;
+        uint256 requestId_;
 
         vm.expectEmit();
         emit RequestCreated(1, lp, 1);
@@ -109,7 +109,7 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 1);
 

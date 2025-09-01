@@ -16,7 +16,7 @@ contract PushTests is SortedArrayTestBase {
     function test_push_singleValue() external {
         array.push(3);
 
-        uint128[] memory expectedValues = new uint128[](1);
+        uint256[] memory expectedValues = new uint256[](1);
         expectedValues[0]               = 3;
 
         assertArray(expectedValues);
@@ -30,7 +30,7 @@ contract PushTests is SortedArrayTestBase {
         array.push(3);
         array.push(7);
 
-        uint128[] memory expectedValues = new uint128[](3);
+        uint256[] memory expectedValues = new uint256[](3);
         expectedValues[0]               = 1;
         expectedValues[1]               = 3;
         expectedValues[2]               = 7;

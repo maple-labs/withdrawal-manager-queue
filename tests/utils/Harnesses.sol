@@ -19,14 +19,14 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         isManualWithdrawal[owner_] = isManual_;
     }
 
-    function __setLastRequest(address owner_, uint128 requestId_) external {
+    function __setLastRequest(address owner_, uint256 requestId_) external {
         SortedArray.push(userRequests[owner_], requestId_);
-        queue.lastRequestId = requestId_;
+        queue.lastRequestId = _toUint128(requestId_);
     }
 
-    function __setQueue(uint128 nextRequestId_, uint128 lastRequestId_) external {
-        queue.nextRequestId = nextRequestId_;
-        queue.lastRequestId = lastRequestId_;
+    function __setQueue(uint256 nextRequestId_, uint256 lastRequestId_) external {
+        queue.nextRequestId = _toUint128(nextRequestId_);
+        queue.lastRequestId = _toUint128(lastRequestId_);
     }
 
     function __setRequestLegacy(uint128 requestId_, address owner_, uint256 shares_) external {
@@ -54,11 +54,11 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
 
         if (requestCount_ < currentRequestCount_) {
             for (uint256 i = requestCount_; i < currentRequestCount_; i++) {
-                SortedArray.remove(userRequests[owner_], uint128(i));
+                SortedArray.remove(userRequests[owner_], _toUint128(i));
             }
         } else {
             for (uint256 i = currentRequestCount_; i > requestCount_; i++) {
-                SortedArray.push(userRequests[owner_], uint128(i));
+                SortedArray.push(userRequests[owner_], _toUint128(i));
             }
         }
 
@@ -71,15 +71,15 @@ contract SortedArrayHarness {
 
     SortedArray.Array array;
 
-    function push(uint128 value_) external {
+    function push(uint256 value_) external {
         SortedArray.push(array, value_);
     }
 
-    function remove(uint128 value_) external {
+    function remove(uint256 value_) external {
         SortedArray.remove(array, value_);
     }
 
-    function get(uint256 index_) external view returns (uint128) {
+    function get(uint256 index_) external view returns (uint256) {
         return SortedArray.get(array, index_);
     }
 
@@ -87,12 +87,12 @@ contract SortedArrayHarness {
         return SortedArray.length(array);
     }
 
-    function getAllValues() external view returns (uint128[] memory) {
+    function getAllValues() external view returns (uint256[] memory) {
         return SortedArray.getAllValues(array);
     }
 
-    function getLast() external view returns (uint128) {
+    function getLast() external view returns (uint256) {
         return SortedArray.getLast(array);
     }
 
-}
+}           

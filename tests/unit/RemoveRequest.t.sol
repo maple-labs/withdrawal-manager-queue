@@ -5,7 +5,7 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract RemoveRequestTests is TestBase {
 
-    event RequestRemoved(uint128 indexed requestId);
+    event RequestRemoved(uint256 indexed requestId);
 
     function setUp() public override {
         super.setUp();
@@ -20,16 +20,16 @@ contract RemoveRequestTests is TestBase {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");
-        withdrawalManager.removeRequest(lp, new uint128[](0));
+        withdrawalManager.removeRequest(lp, new uint256[](0));
     }
 
     function test_removeRequest_notProtocolAdmin() external {
         vm.expectRevert("WM:NOT_PD_OR_GOV_OR_OA");
-        withdrawalManager.removeRequest(lp, new uint128[](0));
+        withdrawalManager.removeRequest(lp, new uint256[](0));
     }
 
     function test_removeRequest_notInQueue() external {
-        uint128[] memory requestIds_ = new uint128[](1);
+        uint256[] memory requestIds_ = new uint256[](1);
         requestIds_[0] = 1;
 
         vm.prank(poolDelegate);
@@ -38,7 +38,7 @@ contract RemoveRequestTests is TestBase {
     }
 
     function test_removeRequest_failedTransfer() external {
-        uint128[] memory requestIds_ = new uint128[](1);
+        uint256[] memory requestIds_ = new uint256[](1);
         requestIds_[0] = 1;
 
         vm.prank(pm);
@@ -52,14 +52,14 @@ contract RemoveRequestTests is TestBase {
     }
 
     function test_removeRequest_success() external {
-        uint128 lastRequestIdLp_;
+        uint256 lastRequestIdLp_;
 
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
 
@@ -70,7 +70,7 @@ contract RemoveRequestTests is TestBase {
         assertEq(lastRequestId_,                  1);
         assertEq(lastRequestIdLp_,                lastRequestId_);
 
-        uint128[] memory requestIds = new uint128[](1);
+        uint256[] memory requestIds = new uint256[](1);
         requestIds[0] = lastRequestId_;
 
         vm.expectEmit();
@@ -84,7 +84,7 @@ contract RemoveRequestTests is TestBase {
         ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
 
         ( lastRequestIdLp_, )            = getLastRequestByOwner(lp);
-        ( uint128 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
+        ( uint256 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
 
         assertEq(lastRequestId_,                  1);
         assertEq(shares_,                         0);
@@ -97,7 +97,7 @@ contract RemoveRequestTests is TestBase {
     }
 
     function test_removeRequest_multiple_requests_success() external {
-        uint128 lastRequestIdLp_;
+        uint256 lastRequestIdLp_;
 
         vm.startPrank(pm);
         withdrawalManager.addShares(1, lp);
@@ -105,7 +105,7 @@ contract RemoveRequestTests is TestBase {
         withdrawalManager.addShares(1, lp);
         vm.stopPrank();
 
-        ( , uint128 lastRequestId_ ) = withdrawalManager.queue();
+        ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
 
@@ -118,7 +118,7 @@ contract RemoveRequestTests is TestBase {
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 3);
 
-        uint128[] memory requestIds = new uint128[](1);
+        uint256[] memory requestIds = new uint256[](1);
         requestIds[0] = 2;
 
         vm.expectEmit();
@@ -132,7 +132,7 @@ contract RemoveRequestTests is TestBase {
         ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId_);
 
         ( lastRequestIdLp_, )            = getLastRequestByOwner(lp);
-        ( uint128 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
+        ( uint256 lastRequestByOwner_, ) = getLastRequestByOwner(owner_);
 
         assertEq(lastRequestId_,                  3);
         assertEq(shares_,                         1);
@@ -143,7 +143,7 @@ contract RemoveRequestTests is TestBase {
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
-        requestIds = new uint128[](2);
+        requestIds = new uint256[](2);
         requestIds[0] = 1;
         requestIds[1] = 3;
 

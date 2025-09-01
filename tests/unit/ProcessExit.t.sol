@@ -6,7 +6,7 @@ import { TestBase, console } from "../utils/TestBase.sol";
 // TODO: Add ManualSharesDecreased event to tests
 contract ProcessExitTests is TestBase {
 
-    event RequestRemoved(uint128 indexed requestId);
+    event RequestRemoved(uint256 indexed requestId);
 
     uint256 assetsDeposited = 100e18;
     uint256 sharesToRedeem  = 250e18;
@@ -98,7 +98,7 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem);
         assertEq(pool.balanceOf(wm), 0);
 
-        ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
+        ( uint256 lastRequestId_, ) = getLastRequestByOwner(lp);
         assertEq(lastRequestId_, 2);
 
         assertEq(withdrawalManager.requestIds(lp), lastRequestId_);
@@ -127,7 +127,7 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem / 2);
         assertEq(pool.balanceOf(wm), sharesToRedeem / 2);
 
-        ( uint128 lastRequestId_, ) = getLastRequestByOwner(lp);
+        ( uint256 lastRequestId_, ) = getLastRequestByOwner(lp);
         assertEq(lastRequestId_, 1);
 
         assertEq(withdrawalManager.requestIds(lp), lastRequestId_);

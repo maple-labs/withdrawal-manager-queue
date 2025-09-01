@@ -45,10 +45,10 @@ contract ViewFunctionsTests is TestBase {
 
         withdrawalManager.__setQueue(1, 5);
 
-        (uint128[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requestsByOwner(lp1);
-        (uint128[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2);
-        (uint128[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requestsByOwner(lp3);
-        (uint128[] memory requestIdsLp4_, uint256[] memory sharesLp4_) = withdrawalManager.requestsByOwner(lp4);
+        (uint256[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requestsByOwner(lp1);
+        (uint256[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2);
+        (uint256[] memory requestIdsLp3_, uint256[] memory sharesLp3_) = withdrawalManager.requestsByOwner(lp3);
+        (uint256[] memory requestIdsLp4_, uint256[] memory sharesLp4_) = withdrawalManager.requestsByOwner(lp4);
 
 
         assertEq(requestIdsLp1_.length, 2);

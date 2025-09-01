@@ -10,9 +10,9 @@ contract AddSharesFuzzTests is TestBase {
     }
 
     function testFuzz_addShares(uint256[50] memory amount_, address[50] calldata account_) external {
-        uint128 lastRequestId;
+        uint256 lastRequestId;
         uint256 totalShares_;
-        uint128 requestId_;
+        uint256 requestId_;
         uint256 shares_;
 
         for (uint256 i; i < account_.length; ++i) {

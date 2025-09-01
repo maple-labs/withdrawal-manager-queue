@@ -5,9 +5,9 @@ pragma solidity ^0.8.7;
 library SortedArray {
 
     struct Array {
-        uint128[] values;
+        uint256[] values;
 
-        mapping(uint128 => uint256) valueToIndex;
+        mapping(uint256 => uint256) valueToIndex;
     }
 
     /**************************************************************************************************************************************/
@@ -20,7 +20,7 @@ library SortedArray {
      * @param array_ The array to push the value to.
      * @param value_ The value to push to the array.
      */
-    function push(Array storage array_, uint128 value_) internal {
+    function push(Array storage array_, uint256 value_) internal {
         require(getLast(array_) < value_, "SA:P:NOT_LARGEST");
 
         array_.values.push(value_);
@@ -34,7 +34,7 @@ library SortedArray {
      * @param array_ The array to remove the value from.
      * @param value_ The value to remove from the array.
      */
-    function remove(Array storage array_, uint128 value_) internal {
+    function remove(Array storage array_, uint256 value_) internal {
         uint256 length_ = length(array_);
 
         if (length_ == 1) {
@@ -45,7 +45,7 @@ library SortedArray {
         uint256 index_ = array_.valueToIndex[value_];
 
         for (uint256 i = index_; i <= length_ - 2; i++) {
-            uint128 nextValue_              = array_.values[i + 1];
+            uint256 nextValue_              = array_.values[i + 1];
             array_.values[i]                = nextValue_;
             array_.valueToIndex[nextValue_] = i;
         }
@@ -63,7 +63,7 @@ library SortedArray {
      * @param  index_ The index of the value to get from the array.
      * @return value_ The value at the given index.
      */
-    function get(Array storage array_, uint256 index_) internal view returns (uint128 value_) {
+    function get(Array storage array_, uint256 index_) internal view returns (uint256 value_) {
         require(index_ < length(array_), "SA:G:OUT_OF_BOUNDS");
         value_ = array_.values[index_];
     }
@@ -82,7 +82,7 @@ library SortedArray {
      * @param  array_  The array to get the values from.
      * @return values_ All values from the array.
      */
-    function getAllValues(Array storage array_) internal view returns (uint128[] memory values_) {
+    function getAllValues(Array storage array_) internal view returns (uint256[] memory values_) {
         values_ = array_.values;
     }
 
@@ -91,7 +91,7 @@ library SortedArray {
      * @param  array_  The array to get the last value from.
      * @return value_  The last value in the array.
      */
-    function getLast(Array storage array_) internal view returns (uint128 value_) {
+    function getLast(Array storage array_) internal view returns (uint256 value_) {
         uint256 length_ = length(array_);
         return length_ > 0 ? array_.values[length_ - 1] : 0;
     }
@@ -106,7 +106,7 @@ library SortedArray {
      * @param  array_  The array to delete the value from.
      * @param  value_  The value to delete from the array.
      */
-    function _deleteValue(Array storage array_, uint128 value_) private {
+    function _deleteValue(Array storage array_, uint256 value_) private {
         array_.values.pop();
         delete array_.valueToIndex[value_];
     }
