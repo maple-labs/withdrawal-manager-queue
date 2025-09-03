@@ -288,7 +288,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         lastRequestId_ = ++queue.lastRequestId;
 
         queue.requests[_toUint128(lastRequestId_)] = WithdrawalRequest(owner_, shares_);
-        userEscrowedShares[owner_]    += shares_;
+        userEscrowedShares[owner_]                += shares_;
 
         SortedArray.push(userRequests[owner_], lastRequestId_);
 
@@ -315,7 +315,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(owner_, requestId_);
         } else {
             queue.requests[_toUint128(requestId_)].shares = sharesRemaining_;
-            userEscrowedShares[owner_]       -= sharesToRemove_;
+            userEscrowedShares[owner_]                   -= sharesToRemove_;
 
             emit RequestDecreased(requestId_, sharesToRemove_);
         }
@@ -404,7 +404,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         } else {
             // Update the withdrawal request.
             queue.requests[_toUint128(requestId_)].shares = sharesRemaining_;
-            userEscrowedShares[request_.owner] -= processedShares_;
+            userEscrowedShares[request_.owner]           -= processedShares_;
 
             emit RequestDecreased(requestId_, processedShares_);
         }
