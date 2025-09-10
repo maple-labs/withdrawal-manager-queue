@@ -4,10 +4,7 @@ pragma solidity ^0.8.7;
 import { TestBase } from "../utils/TestBase.sol";
 
 contract RemoveSharesTests is TestBase {
-
-    event RequestDecreased(uint256 indexed requestId, uint256 shares);
-    event RequestRemoved(uint256 indexed requestId);
-
+    
     function setUp() public override {
         super.setUp();
 
@@ -212,5 +209,5 @@ contract RemoveSharesTests is TestBase {
         assertEq(lastRequestId_, 0);
         assertEq(lastShares_   , 0);
     }
-    
+
 }

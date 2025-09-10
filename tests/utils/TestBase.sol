@@ -35,6 +35,12 @@ contract TestBase is Test {
     MapleWithdrawalManagerFactory internal factory;
     MapleWithdrawalManagerHarness internal withdrawalManager;
 
+    event ManualWithdrawalSet(address indexed account, bool isManual);
+    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
+    event RequestDecreased(uint256 indexed requestId, uint256 shares);
+    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
+    event RequestRemoved(uint256 indexed requestId);
+
     function setUp() public virtual {
         // Create all mocks.
         asset              = new MockERC20("Wrapped Ether", "WETH", 18);

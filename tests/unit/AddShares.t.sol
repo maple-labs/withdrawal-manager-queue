@@ -5,8 +5,6 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract AddSharesTests is TestBase {
 
-    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
-
     function setUp() public override {
         super.setUp();
 
@@ -28,7 +26,7 @@ contract AddSharesTests is TestBase {
         withdrawalManager.addShares(0, lp);
     }
 
-    function test_addShares_multiple_requests() external{   
+    function test_addShares_multiple_requests() external{
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
@@ -117,7 +115,7 @@ contract AddSharesTests is TestBase {
 
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
         ( requestId_,) = getLastRequestByOwner(owner_);
-        
+
         assertEq(shares_,                         1);
         assertEq(withdrawalManager.totalShares(), 1);
         assertEq(requestId_,                      lastRequestId_);

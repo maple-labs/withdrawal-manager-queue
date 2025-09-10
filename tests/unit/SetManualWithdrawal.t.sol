@@ -5,8 +5,6 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract SetManualWithdrawalTests is TestBase {
 
-    event ManualWithdrawalSet(address indexed account, bool isManual);
-
     function test_setManualWithdrawal_protocolPaused() external {
         globals.__setFunctionPaused(true);
 

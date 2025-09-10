@@ -6,8 +6,6 @@ import { TestBase, console } from "../utils/TestBase.sol";
 // TODO: Add ManualSharesDecreased event to tests
 contract ProcessExitTests is TestBase {
 
-    event RequestRemoved(uint256 indexed requestId);
-
     uint256 assetsDeposited = 100e18;
     uint256 sharesToRedeem  = 250e18;
 
@@ -114,7 +112,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesToRedeem / 2);
         withdrawalManager.__setTotalShares(sharesToRedeem);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem / 2);
-        
+
         // Only half of the liquidity is available.
         asset.burn(address(pool), assetsDeposited / 2);
 

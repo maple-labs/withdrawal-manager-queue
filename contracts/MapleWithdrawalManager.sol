@@ -209,7 +209,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     function removeRequest(
         address owner_,
         uint256[] calldata requestIds_
-    ) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins
+    )
+        external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins
     {
         require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
         require(requestIds_.length > 0, "WM:RR:ZERO_REQUESTS");
@@ -244,40 +245,22 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** Unprivileged External Functions                                                                                                ***/
     /**************************************************************************************************************************************/
 
-    function updateShares(
+    function removeSharesById(
         uint256 requestId_,
-        uint256 newSharesTotal_
-    ) public override whenProtocolNotPaused nonReentrant returns (uint256 updatedRequestId_)
+        uint256 sharesToRemove_
+    )
+        public override whenProtocolNotPaused nonReentrant returns (uint256 sharesReturned_, uint256 sharesRemaining_)
     {
         WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
-        require(request_.owner != address(0),       "WM:US:INVALID_REQUEST");
-        require(request_.owner == msg.sender,       "WM:US:NOT_OWNER");
-        require(request_.shares != newSharesTotal_, "WM:US:NO_CHANGE");
-
-        uint256 sharesToRemove_ = newSharesTotal_ < request_.shares ? request_.shares - newSharesTotal_ : request_.shares;
+        require(request_.owner != address(0),       "WM:RSBI:INVALID_REQUEST");
+        require(request_.owner == msg.sender,       "WM:RSBI:NOT_OWNER");
+        require(sharesToRemove_ != 0,               "WM:RSBI:NO_CHANGE");
+        require(sharesToRemove_ <= request_.shares, "WM:RSBI:INSUFFICIENT_SHARES");
 
         // Removes shares and will cancel the request if there are no shares remaining.
-        _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);
-
-        if (newSharesTotal_ > request_.shares)
-            updatedRequestId_ = _addRequest(request_.owner, newSharesTotal_);
-        else
-            updatedRequestId_ = newSharesTotal_ == 0 ? 0 : requestId_;
-    }
-
-    function updateSharesBatch(
-        uint256[] memory requestIds_,
-        uint256[] calldata newSharesTotals_
-    ) external override whenProtocolNotPaused returns (uint256[] memory updatedRequestIds_)
-    {
-        require(requestIds_.length == newSharesTotals_.length, "WM:USB:ARRAY_LENGTH_MISMATCH");
-
-        for (uint256 i = 0; i < requestIds_.length; ++i) {
-            requestIds_[i] = updateShares(requestIds_[i], newSharesTotals_[i]);
-        }
-
-        updatedRequestIds_ = requestIds_;
+        sharesReturned_  = _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);
+        sharesRemaining_ = request_.shares - sharesToRemove_;
     }
 
     /**************************************************************************************************************************************/
@@ -300,11 +283,13 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         emit RequestCreated(lastRequestId_, owner_, shares_);
     }
 
-    function _removeShares(uint256 requestId_,
+    function _removeShares(
+        uint256 requestId_,
         uint256 sharesToRemove_,
         address owner_,
         uint256 currentShares_
-    ) internal returns (uint256 sharesReturned_)
+    )
+        internal returns (uint256 sharesReturned_)
     {
         uint256 sharesRemaining_ = currentShares_ - sharesToRemove_;
 

@@ -108,7 +108,7 @@ contract MockPool is MockERC20 {
         asset_ = address(_asset);
     }
 
-    function redeem(uint256, address, address) external view returns (uint256 assets_) {
+    function redeem(uint256, address, address) external pure returns (uint256 assets_) {
         assets_;  // Ignore variable
     }
 

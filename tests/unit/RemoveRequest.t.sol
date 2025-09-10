@@ -5,8 +5,6 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract RemoveRequestTests is TestBase {
 
-    event RequestRemoved(uint256 indexed requestId);
-
     function setUp() public override {
         super.setUp();
 

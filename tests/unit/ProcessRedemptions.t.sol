@@ -7,10 +7,6 @@ import { TestBase } from "../utils/TestBase.sol";
 // TODO: Add test case for reentrancy check
 contract ProcessRedemptionsTests is TestBase {
 
-    event RequestDecreased(uint256 indexed requestId, uint256 shares);
-    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
-    event RequestRemoved(uint256 indexed requestId);
-
     uint256 assetsDeposited = 100e18;
     uint256 sharesLocked    = 250e18;
 
@@ -137,7 +133,7 @@ contract ProcessRedemptionsTests is TestBase {
    function test_processRedemptions_manual_multipleLps_multiple_requests() external {
 
         address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3"); 
+        address lp3 = makeAddr("lp3");
 
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setManualWithdrawal(lp2, true);
@@ -386,10 +382,6 @@ contract ProcessRedemptionsTests is TestBase {
 
 contract ComplexRedemptionTests is TestBase {
 
-    event RequestDecreased(uint256 indexed requestId, uint256 shares);
-    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
-    event RequestRemoved(uint256 indexed requestId);
-
     function test_processRedemptions_complex() external {
         uint256 totalAssets_     = 100e18;
         uint256 totalShares_     = 250e18;
@@ -445,7 +437,7 @@ contract ComplexRedemptionTests is TestBase {
         assertEq(shares5_.length,     1);
         assertEq(requestIds5_[0],     5);
         assertEq(shares5_[0],         25e18);
-        
+
         assertEq(requestIds6_.length, 1);
         assertEq(shares6_.length,     1);
         assertEq(requestIds6_[0],     6);

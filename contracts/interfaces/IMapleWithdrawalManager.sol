@@ -100,6 +100,15 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function removeShares(uint256 shares, address owner) external returns (uint256 sharesReturned);
 
     /**
+     *  @dev    Remove shares from a specific withdrawal request.
+     *  @param  requestId       Identifier of the withdrawal request that is being updated.
+     *  @param  sharesToRemove  Amount of shares to remove from the request.
+     *  @return sharesReturned  Amount of shares that were returned.
+     *  @return sharesRemaining Amount of shares remaining in the request.
+     */
+    function removeSharesById(uint256 requestId, uint256 sharesToRemove) external returns (uint256 sharesReturned, uint256 sharesRemaining);
+
+    /**
      *  @dev   Removes withdrawal requests from the queue.
      *         Can only be called by the pool delegate.
      *  @param owner      Address of the owner of shares.
@@ -113,30 +122,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param isManual `true` if the account withdraws manually, `false` if the withdrawals are performed automatically.
      */
     function setManualWithdrawal(address account, bool isManual) external;
-
-
-    /**
-     *  @dev    Updates the total amount of shares pending redemption.
-     *          1. If newSharesTotal is zero then the request will be removed.
-     *          2. If newSharesTotal is less than the current shares then the request will be decreased.
-     *          3. If newSharesTotal is greater than the current shares then the current request will be cancelled
-     *             and a new request will be created at the end of the queue.
-     *  @param  requestId        Identifier of the withdrawal request that is being updated.
-     *  @param  newSharesTotal   New total amount of shares pending redemption.
-     *  @return currentRequestId Identifier of the withdrawal request that was updated or created.
-     */
-    function updateShares(uint256 requestId, uint256 newSharesTotal) external returns (uint256 currentRequestId);
-
-    /**
-     *  @dev    Updates the total amount of shares pending redemption in batch.
-     *  @param  requestIds        Array of identifiers of the withdrawal requests that are being updated.
-     *  @param  newSharesTotals   Array of new total amounts of shares pending redemption.
-     *  @return currentRequestIds Array of identifiers of the withdrawal requests that were updated or created.
-     */
-    function updateSharesBatch(
-        uint256[] calldata requestIds,
-        uint256[] calldata newSharesTotals
-    ) external returns (uint256[] memory currentRequestIds);
 
     /**************************************************************************************************************************************/
     /*** View Functions                                                                                                                 ***/
