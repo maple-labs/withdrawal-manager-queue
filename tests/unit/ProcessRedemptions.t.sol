@@ -18,6 +18,8 @@ contract ProcessRedemptionsTests is TestBase {
 
         poolManager.__setTotalAssets(assetsDeposited);
         withdrawalManager.__setTotalShares(sharesLocked);
+
+        globals.__setIsInstanceOf(false);
     }
 
     function test_processRedemptions_protocolPaused() external {
@@ -28,8 +30,12 @@ contract ProcessRedemptionsTests is TestBase {
     }
 
     function test_processRedemptions_notRedeemer() external {
-        globals.__setIsInstanceOf(false);
+        vm.expectRevert("WM:NOT_REDEEMER");
+        withdrawalManager.processRedemptions(sharesLocked);
+    }
 
+    function test_processRedemptions_governorNotAllowed() external {
+        vm.prank(governor);
         vm.expectRevert("WM:NOT_REDEEMER");
         withdrawalManager.processRedemptions(sharesLocked);
     }
@@ -50,20 +56,6 @@ contract ProcessRedemptionsTests is TestBase {
 
     function test_processRedemptions_poolDelegate() external {
         vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(sharesLocked);
-
-        assertQueue({ nextRequestId: 1, lastRequestId: 0 });
-    }
-
-    function test_processRedemptions_governor() external {
-        vm.prank(governor);
-        withdrawalManager.processRedemptions(sharesLocked);
-
-        assertQueue({ nextRequestId: 1, lastRequestId: 0 });
-    }
-
-    function test_processRedemptions_operationalAdmin() external {
-        vm.prank(operationalAdmin);
         withdrawalManager.processRedemptions(sharesLocked);
 
         assertQueue({ nextRequestId: 1, lastRequestId: 0 });

@@ -62,27 +62,22 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     modifier onlyRedeemer {
-        address globals_ = globals();
-
         require(
             msg.sender == IPoolManagerLike(poolManager).poolDelegate() ||
-            msg.sender == IGlobalsLike(globals_).governor() ||
-            msg.sender == IGlobalsLike(globals_).operationalAdmin() ||
-            IGlobalsLike(globals_).isInstanceOf("WITHDRAWAL_REDEEMER", msg.sender),
+            IGlobalsLike(globals()).isInstanceOf("WITHDRAWAL_REDEEMER", msg.sender),
             "WM:NOT_REDEEMER"
         );
 
         _;
     }
 
-    modifier onlyPoolDelegateOrProtocolAdmins {
+    modifier onlyPoolDelegateOrOperationalAdmin {
         address globals_ = globals();
 
         require(
             msg.sender == IPoolManagerLike(poolManager).poolDelegate() ||
-            msg.sender == IGlobalsLike(globals_).governor() ||
             msg.sender == IGlobalsLike(globals_).operationalAdmin(),
-            "WM:NOT_PD_OR_GOV_OR_OA"
+            "WM:NOT_POOL_DELEG_OR_OPS_ADMIN"
         );
 
         _;
@@ -210,7 +205,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         address owner_,
         uint256[] calldata requestIds_
     )
-        external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins
+        external override whenProtocolNotPaused onlyPoolDelegateOrOperationalAdmin
     {
         require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
         require(requestIds_.length > 0, "WM:RR:ZERO_REQUESTS");
@@ -235,7 +230,12 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         totalShares -= sharesToRemove_;
     }
 
-    function setManualWithdrawal(address owner_, bool isManual_) external override whenProtocolNotPaused onlyPoolDelegateOrProtocolAdmins {
+    function setManualWithdrawal(
+        address owner_,
+        bool isManual_
+    ) 
+        external override whenProtocolNotPaused onlyPoolDelegateOrOperationalAdmin 
+    {
         isManualWithdrawal[owner_] = isManual_;
 
         emit ManualWithdrawalSet(owner_, isManual_);

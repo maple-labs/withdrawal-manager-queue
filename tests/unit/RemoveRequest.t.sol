@@ -21,8 +21,14 @@ contract RemoveRequestTests is TestBase {
         withdrawalManager.removeRequest(lp, new uint256[](0));
     }
 
-    function test_removeRequest_notProtocolAdmin() external {
-        vm.expectRevert("WM:NOT_PD_OR_GOV_OR_OA");
+    function test_removeRequest_notPoolDelegateOrAdmin() external {
+        vm.expectRevert("WM:NOT_POOL_DELEG_OR_OPS_ADMIN");
+        withdrawalManager.removeRequest(lp, new uint256[](0));
+    }
+
+    function test_removeRequest_governorNotAllowed() external {
+        vm.prank(governor);
+        vm.expectRevert("WM:NOT_POOL_DELEG_OR_OPS_ADMIN");
         withdrawalManager.removeRequest(lp, new uint256[](0));
     }
 

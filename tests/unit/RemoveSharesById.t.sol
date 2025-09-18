@@ -42,7 +42,7 @@ contract RemoveSharesByIdFailureTests is TestBase {
         uint256[] memory requestIds = new uint256[](1);
         requestIds[0] = 1;
 
-        vm.prank(governor);
+        vm.prank(operationalAdmin);
         withdrawalManager.removeRequest(lp, requestIds);
 
         vm.expectRevert("WM:RSBI:INVALID_REQUEST");
