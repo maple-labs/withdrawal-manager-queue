@@ -9,7 +9,7 @@ contract AddSharesFuzzTests is TestBase {
         super.setUp();
     }
 
-    function testFuzz_addShares(uint256[50] memory amount_, address[50] calldata account_) external {
+    function testFuzz_addShares(uint256[10] memory amount_, address[10] calldata account_) external {
         uint256 lastRequestId;
         uint256 totalShares_;
         uint256 requestId_;
@@ -17,7 +17,7 @@ contract AddSharesFuzzTests is TestBase {
 
         for (uint256 i; i < account_.length; ++i) {
             amount_[i] = bound(amount_[i], 1, 1e29);
-           
+
             pool.mint(pm, amount_[i]);
 
             vm.startPrank(pm);

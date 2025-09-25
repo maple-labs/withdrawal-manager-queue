@@ -43,6 +43,6 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     mapping(address => uint256) public override userEscrowedShares;  // Maps users to their escrowed shares yet to be processed.
 
-    mapping(address => SortedArray.Array) internal userRequests;  // Maps users to their withdrawal requests.
+    mapping(address => SortedArray.Array) internal _userRequests;  // Maps users to their withdrawal requests.
 
 }

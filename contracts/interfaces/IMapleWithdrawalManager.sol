@@ -20,10 +20,11 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
 
     /**
      *  @dev   Emitted when a manual redemption is processed.
+     *  @param requestId   Identifier of the withdrawal request.
      *  @param owner       Address of the account.
      *  @param sharesAdded Amount of shares added to the redeemable amount.
      */
-    event ManualSharesIncreased(address indexed owner, uint256 sharesAdded);
+    event ManualSharesIncreased(uint256 indexed requestId, address indexed owner, uint256 sharesAdded);
 
     /**
      *  @dev   Emitted when the withdrawal type of an account is updated.

@@ -156,7 +156,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         require(totalEscrowedShares_ >= shares_, "WM:RS:INSUFFICIENT_SHARES");
 
         while (sharesReturned_ < shares_) {
-            uint256 requestId_                = SortedArray.getLast(userRequests[owner_]);
+            uint256 requestId_                = SortedArray.getLast(_userRequests[owner_]);
             WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
             uint256 sharesToRemove_ = _min(shares_ - sharesReturned_, request_.shares);
@@ -233,8 +233,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     function setManualWithdrawal(
         address owner_,
         bool isManual_
-    ) 
-        external override whenProtocolNotPaused onlyPoolDelegateOrOperationalAdmin 
+    )
+        external override whenProtocolNotPaused onlyPoolDelegateOrOperationalAdmin
     {
         isManualWithdrawal[owner_] = isManual_;
 
@@ -273,7 +273,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         queue.requests[_toUint128(lastRequestId_)] = WithdrawalRequest(owner_, shares_);
         userEscrowedShares[owner_]                += shares_;
 
-        SortedArray.push(userRequests[owner_], lastRequestId_);
+        SortedArray.push(_userRequests[owner_], lastRequestId_);
 
         // Increase the number of shares locked.
         totalShares += shares_;
@@ -398,7 +398,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         if (isManualWithdrawal[request_.owner]) {
             manualSharesAvailable[request_.owner] += processedShares_;
 
-            emit ManualSharesIncreased(request_.owner, processedShares_);
+            emit ManualSharesIncreased(requestId_, request_.owner, processedShares_);
         } else {
             // Otherwise, just adjust totalShares and perform the redeem.
             totalShares -= processedShares_;
@@ -409,7 +409,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
     function _removeRequest(address owner_, uint256 requestId_) internal {
         userEscrowedShares[owner_] -= queue.requests[_toUint128(requestId_)].shares;
-        SortedArray.remove(userRequests[owner_], requestId_);
+        SortedArray.remove(_userRequests[owner_], requestId_);
         delete queue.requests[_toUint128(requestId_)];
 
         emit RequestRemoved(requestId_);
@@ -491,7 +491,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function requestIds(address owner_) external view override returns (uint256 requestId_) {
-        requestId_ = SortedArray.getLast(userRequests[owner_]);
+        requestId_ = SortedArray.getLast(_userRequests[owner_]);
     }
 
     function requests(uint256 requestId_) external view override returns (address owner_, uint256 shares_) {
@@ -500,7 +500,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function requestsByOwner(address owner_) external view override returns (uint256[] memory requestIds_, uint256[] memory shares_) {
-        requestIds_ = SortedArray.getAllValues(userRequests[owner_]);
+        requestIds_ = SortedArray.getAllValues(_userRequests[owner_]);
         shares_     = new uint256[](requestIds_.length);
 
         for (uint256 i = 0; i < requestIds_.length; ++i) {

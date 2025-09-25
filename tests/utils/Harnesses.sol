@@ -20,7 +20,7 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setLastRequest(address owner_, uint256 requestId_) external {
-        SortedArray.push(userRequests[owner_], requestId_);
+        SortedArray.push(_userRequests[owner_], requestId_);
         queue.lastRequestId = _toUint128(requestId_);
     }
 
@@ -42,7 +42,7 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         queue.lastRequestId        = requestId_;
         queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
 
-        SortedArray.push(userRequests[owner_], requestId_);
+        SortedArray.push(_userRequests[owner_], requestId_);
     }
 
     function __setTotalShares(uint256 totalShares_) external {
@@ -50,15 +50,15 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setUserRequestCount(address owner_, uint256 requestCount_, uint256 escrowSharesTotal_) external {
-        uint256 currentRequestCount_ = SortedArray.length(userRequests[owner_]);
+        uint256 currentRequestCount_ = SortedArray.length(_userRequests[owner_]);
 
         if (requestCount_ < currentRequestCount_) {
             for (uint256 i = requestCount_; i < currentRequestCount_; i++) {
-                SortedArray.remove(userRequests[owner_], _toUint128(i));
+                SortedArray.remove(_userRequests[owner_], _toUint128(i));
             }
         } else {
             for (uint256 i = currentRequestCount_; i > requestCount_; i++) {
-                SortedArray.push(userRequests[owner_], _toUint128(i));
+                SortedArray.push(_userRequests[owner_], _toUint128(i));
             }
         }
 
@@ -95,4 +95,4 @@ contract SortedArrayHarness {
         return SortedArray.getLast(array);
     }
 
-}           
+}

@@ -14,12 +14,13 @@ contract MapleWithdrawalManagerMigratorV200 is MapleProxiedInternals, MapleWithd
         uint128 lastRequestId_ = queue.lastRequestId;
 
         for (uint128 i = nextRequestId_; i <= lastRequestId_; ++i) {
-            WithdrawalRequest storage request = queue.requests[i];
-            
-            if (request.owner != address(0)) {
-                userEscrowedShares[request.owner] += request.shares;
-                SortedArray.push(userRequests[request.owner], i);
-            }
+            WithdrawalRequest memory request_ = queue.requests[i];
+
+            if (request_.owner == address(0)) continue;
+
+            userEscrowedShares[request_.owner] += request_.shares;
+
+            SortedArray.push(_userRequests[request_.owner], i);
         }
     }
 

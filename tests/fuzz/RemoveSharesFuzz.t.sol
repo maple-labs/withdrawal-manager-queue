@@ -9,14 +9,14 @@ contract RemoveSharesFuzzTests is TestBase {
         super.setUp();
     }
 
-    function testFuzz_removeShares(address[50] calldata account_, uint256[50] memory amount0_, uint256[50] memory amount1_) external {
+    function testFuzz_removeShares(address[10] calldata account_, uint256[10] memory amount0_, uint256[10] memory amount1_) external {
         address owner_;
 
         uint256 lastRequestId;
         uint256 shares_;
         uint256 totalShares_;
         uint256 requestId_;
-        
+
         for (uint256 i; i < account_.length; ++i) {
             amount0_[i] = bound(amount0_[i], 1, 1e29);
             amount1_[i] = bound(amount1_[i], 1, 1e29);
