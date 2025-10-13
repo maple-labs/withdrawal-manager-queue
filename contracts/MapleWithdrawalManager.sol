@@ -223,9 +223,9 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
             _removeRequest(owner_, requestIds_[i]);
 
             sharesToRemove_ += withdrawalRequest_.shares;
-
-            require(ERC20Helper.transfer(pool, owner_, withdrawalRequest_.shares), "WM:RR:TRANSFER_FAIL");
         }
+
+        require(ERC20Helper.transfer(pool, owner_, sharesToRemove_), "WM:RR:TRANSFER_FAIL");
 
         totalShares -= sharesToRemove_;
     }
