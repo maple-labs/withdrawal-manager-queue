@@ -112,6 +112,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**
      *  @dev   Removes withdrawal requests from the queue.
      *         Can only be called by the pool delegate.
+     *         NOTE: Not to be used in a router based system where the router is managing user requests.
      *  @param owner      Address of the owner of shares.
      *  @param requestIds Array of identifiers of the withdrawal requests to remove.
      */

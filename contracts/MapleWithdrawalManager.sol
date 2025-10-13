@@ -201,6 +201,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** State-Changing Functions - Admin functions                                                                                     ***/
     /**************************************************************************************************************************************/
 
+    // NOTE: Not to be used in a router based system where the router is managing user requests.
     function removeRequest(
         address owner_,
         uint256[] calldata requestIds_
