@@ -249,7 +249,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         uint256 requestId_,
         uint256 sharesToRemove_
     )
-        public override whenProtocolNotPaused nonReentrant returns (uint256 sharesReturned_, uint256 sharesRemaining_)
+        external override whenProtocolNotPaused nonReentrant returns (uint256 sharesReturned_, uint256 sharesRemaining_)
     {
         WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
