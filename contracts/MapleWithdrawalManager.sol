@@ -61,16 +61,6 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         _locked = 1;
     }
 
-    modifier onlyRedeemer {
-        require(
-            msg.sender == IPoolManagerLike(poolManager).poolDelegate() ||
-            IGlobalsLike(globals()).isInstanceOf("WITHDRAWAL_REDEEMER", msg.sender),
-            "WM:NOT_REDEEMER"
-        );
-
-        _;
-    }
-
     modifier onlyPoolDelegateOrOperationalAdmin {
         address globals_ = globals();
 
@@ -85,6 +75,19 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
     modifier onlyPoolManager {
         require(msg.sender == poolManager, "WM:NOT_PM");
+
+        _;
+    }
+
+    modifier onlyRedeemer {
+        address globals_ = globals();
+
+        require(
+            IGlobalsLike(globals_).isInstanceOf("WITHDRAWAL_REDEEMER", msg.sender) ||
+            msg.sender == IPoolManagerLike(poolManager).poolDelegate() ||
+            msg.sender == IGlobalsLike(globals_).operationalAdmin(),
+            "WM:NOT_REDEEMER"
+        );
 
         _;
     }
@@ -165,7 +168,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     /**************************************************************************************************************************************/
-    /*** State-Changing Functions -  onlyRedeemer                                                                                       ***/
+    /*** State-Changing Functions - OnlyRedeemer                                                                                        ***/
     /**************************************************************************************************************************************/
 
     function processRedemptions(uint256 maxSharesToProcess_) external override whenProtocolNotPaused nonReentrant onlyRedeemer {
@@ -197,16 +200,12 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         queue.nextRequestId = _toUint128(nextRequestId_);
     }
 
-    /**************************************************************************************************************************************/
-    /*** State-Changing Functions - Admin functions                                                                                     ***/
-    /**************************************************************************************************************************************/
-
     // NOTE: Not to be used in a router based system where the router is managing user requests.
     function removeRequest(
         address owner_,
         uint256[] calldata requestIds_
     )
-        external override whenProtocolNotPaused onlyPoolDelegateOrOperationalAdmin
+        external override whenProtocolNotPaused onlyRedeemer
     {
         require(owner_ != address(0),   "WM:RR:ZERO_OWNER");
         require(requestIds_.length > 0, "WM:RR:ZERO_REQUESTS");
