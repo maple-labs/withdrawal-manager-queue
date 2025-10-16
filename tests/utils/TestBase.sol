@@ -10,7 +10,7 @@ import { MapleWithdrawalManagerInitializer } from "../../contracts/proxy/MapleWi
 import { MapleWithdrawalManagerHarness }                       from "./Harnesses.sol";
 import { MockFactory, MockGlobals, MockPool, MockPoolManager } from "./Mocks.sol";
 
-import { SortedArrayHarness } from "./Harnesses.sol";
+import { SortedLinkedListHarness } from "./Harnesses.sol";
 
 contract TestBase is Test {
 
@@ -101,26 +101,22 @@ contract TestBase is Test {
 
 }
 
-contract SortedArrayTestBase is Test {
+contract SortedLinkedListTestBase is Test {
 
-    SortedArrayHarness public array;
+    SortedLinkedListHarness public list;
 
     function setUp() public virtual {
-        array = new SortedArrayHarness();
+        list = new SortedLinkedListHarness();
     }
 
-    function assertArray(uint256[] memory values) internal {
-        assertEq(array.length(), values.length);
+    function assertList(uint256[] memory values) internal {
+        assertEq(list.length(), values.length);
 
-        uint256[] memory arrayValues = array.getAllValues();
+        uint128[] memory listValues = list.getAllValues();
 
         for (uint256 i = 0; i < values.length; i++) {
-            assertEq(arrayValues[i], values[i]);
+            assertEq(uint256(listValues[i]), values[i]);
         }
-    }
-
-    function assertElementAtIndex(uint256 index, uint256 value) internal {
-        assertEq(array.get(index), value);
     }
 
 }

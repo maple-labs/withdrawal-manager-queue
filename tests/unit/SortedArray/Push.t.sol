@@ -2,44 +2,52 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.7;
 
-import { SortedArrayTestBase } from "../../utils/TestBase.sol";
+import { SortedLinkedListTestBase } from "../../utils/TestBase.sol";
 
-contract PushTests is SortedArrayTestBase {
+contract PushTests is SortedLinkedListTestBase {
+
+    function test_push_failed_zeroValue() external {
+        vm.expectRevert("SLL:P:ZERO_VALUE");
+        list.push(0);
+    }
+
+    function test_push_failed_valueExists() external {
+        list.push(1);
+
+        vm.expectRevert("SLL:P:VALUE_EXISTS");
+        list.push(1);
+    }
 
     function test_push_failed_outOfOrder() external {
-        array.push(3);
+        list.push(3);
 
-        vm.expectRevert("SA:P:NOT_LARGEST");
-        array.push(1);
+        vm.expectRevert("SLL:P:NOT_LARGEST");
+        list.push(1);
     }
 
     function test_push_singleValue() external {
-        array.push(3);
+        list.push(3);
 
         uint256[] memory expectedValues = new uint256[](1);
         expectedValues[0]               = 3;
 
-        assertArray(expectedValues);
-        assertElementAtIndex(0, 3);
+        assertList(expectedValues);
 
-        assertEq(array.length(), 1);
+        assertEq(list.length(), 1);
     }
 
     function test_push_multipleValues_inOrder() external {
-        array.push(1);
-        array.push(3);
-        array.push(7);
+        list.push(1);
+        list.push(3);
+        list.push(7);
 
         uint256[] memory expectedValues = new uint256[](3);
         expectedValues[0]               = 1;
         expectedValues[1]               = 3;
         expectedValues[2]               = 7;
 
-        assertArray(expectedValues);
-        assertElementAtIndex(0,  1);
-        assertElementAtIndex(1,  3);
-        assertElementAtIndex(2,  7);
-        assertEq(array.length(), 3);
+        assertList(expectedValues);
+        assertEq(list.length(), 3);
     }
 
 }

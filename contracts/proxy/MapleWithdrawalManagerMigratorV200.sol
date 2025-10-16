@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import { MapleProxiedInternals } from "../../modules/maple-proxy-factory/contracts/MapleProxiedInternals.sol";
 
-import { SortedArray } from "../utils/SortedArray.sol";
+import { SortedLinkedList } from "../utils/SortedLinkedList.sol";
 
 import { MapleWithdrawalManagerStorage } from "./MapleWithdrawalManagerStorage.sol";
 
@@ -20,7 +20,7 @@ contract MapleWithdrawalManagerMigratorV200 is MapleProxiedInternals, MapleWithd
 
             userEscrowedShares[request_.owner] += request_.shares;
 
-            SortedArray.push(_userRequests[request_.owner], i);
+            SortedLinkedList.push(_userRequests[request_.owner], i);
         }
     }
 

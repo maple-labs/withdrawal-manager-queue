@@ -16,7 +16,7 @@ import {
 
 import { MapleWithdrawalManagerStorage } from "./proxy/MapleWithdrawalManagerStorage.sol";
 
-import { SortedArray } from "./utils/SortedArray.sol";
+import { SortedLinkedList } from "./utils/SortedLinkedList.sol";
 
 /*
 
@@ -159,7 +159,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         require(totalEscrowedShares_ >= shares_, "WM:RS:INSUFFICIENT_SHARES");
 
         while (sharesReturned_ < shares_) {
-            uint256 requestId_                = SortedArray.getLast(_userRequests[owner_]);
+            uint256 requestId_                = SortedLinkedList.getLast(_userRequests[owner_]);
             WithdrawalRequest memory request_ = queue.requests[_toUint128(requestId_)];
 
             uint256 sharesToRemove_ = _min(shares_ - sharesReturned_, request_.shares);
@@ -273,7 +273,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         queue.requests[_toUint128(lastRequestId_)] = WithdrawalRequest(owner_, shares_);
         userEscrowedShares[owner_]                += shares_;
 
-        SortedArray.push(_userRequests[owner_], lastRequestId_);
+        SortedLinkedList.push(_userRequests[owner_], _toUint128(lastRequestId_));
 
         // Increase the number of shares locked.
         totalShares += shares_;
@@ -409,7 +409,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
 
     function _removeRequest(address owner_, uint256 requestId_) internal {
         userEscrowedShares[owner_] -= queue.requests[_toUint128(requestId_)].shares;
-        SortedArray.remove(_userRequests[owner_], requestId_);
+        SortedLinkedList.remove(_userRequests[owner_], _toUint128(requestId_));
         delete queue.requests[_toUint128(requestId_)];
 
         emit RequestRemoved(requestId_);
@@ -491,7 +491,7 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function requestIds(address owner_) external view override returns (uint256 requestId_) {
-        requestId_ = SortedArray.getLast(_userRequests[owner_]);
+        requestId_ = SortedLinkedList.getLast(_userRequests[owner_]);
     }
 
     function requests(uint256 requestId_) external view override returns (address owner_, uint256 shares_) {
@@ -500,11 +500,14 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     }
 
     function requestsByOwner(address owner_) external view override returns (uint256[] memory requestIds_, uint256[] memory shares_) {
-        requestIds_ = SortedArray.getAllValues(_userRequests[owner_]);
-        shares_     = new uint256[](requestIds_.length);
+        uint128[] memory requestIdsByOwner_ = SortedLinkedList.getAllValues(_userRequests[owner_]);
 
-        for (uint256 i = 0; i < requestIds_.length; ++i) {
-            shares_[i] = queue.requests[_toUint128(requestIds_[i])].shares;
+        requestIds_ = new uint256[](requestIdsByOwner_.length);
+        shares_     = new uint256[](requestIdsByOwner_.length);
+
+        for (uint256 i = 0; i < requestIdsByOwner_.length; ++i) {
+            requestIds_[i] = requestIdsByOwner_[i];
+            shares_[i]     = queue.requests[requestIdsByOwner_[i]].shares;
         }
     }
 

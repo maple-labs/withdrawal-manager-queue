@@ -3,7 +3,7 @@ pragma solidity ^0.8.7;
 
 import { MapleWithdrawalManager } from "../../contracts/MapleWithdrawalManager.sol";
 
-import { SortedArray } from "../../contracts/utils/SortedArray.sol";
+import { SortedLinkedList } from "../../contracts/utils/SortedLinkedList.sol";
 
 contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
 
@@ -20,7 +20,7 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setLastRequest(address owner_, uint256 requestId_) external {
-        SortedArray.push(_userRequests[owner_], requestId_);
+        SortedLinkedList.push(_userRequests[owner_], _toUint128(requestId_));
         queue.lastRequestId = _toUint128(requestId_);
     }
 
@@ -42,7 +42,7 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         queue.lastRequestId        = requestId_;
         queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
 
-        SortedArray.push(_userRequests[owner_], requestId_);
+        SortedLinkedList.push(_userRequests[owner_], _toUint128(requestId_));
     }
 
     function __setTotalShares(uint256 totalShares_) external {
@@ -50,15 +50,15 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
     }
 
     function __setUserRequestCount(address owner_, uint256 requestCount_, uint256 escrowSharesTotal_) external {
-        uint256 currentRequestCount_ = SortedArray.length(_userRequests[owner_]);
+        uint256 currentRequestCount_ = SortedLinkedList.length(_userRequests[owner_]);
 
         if (requestCount_ < currentRequestCount_) {
             for (uint256 i = requestCount_; i < currentRequestCount_; i++) {
-                SortedArray.remove(_userRequests[owner_], _toUint128(i));
+                SortedLinkedList.remove(_userRequests[owner_], _toUint128(i));
             }
         } else {
             for (uint256 i = currentRequestCount_; i > requestCount_; i++) {
-                SortedArray.push(_userRequests[owner_], _toUint128(i));
+                SortedLinkedList.push(_userRequests[owner_], _toUint128(i));
             }
         }
 
@@ -67,32 +67,28 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
 
 }
 
-contract SortedArrayHarness {
+contract SortedLinkedListHarness {
 
-    SortedArray.Array array;
+    SortedLinkedList.List list;
 
-    function push(uint256 value_) external {
-        SortedArray.push(array, value_);
+    function push(uint128 value_) external {
+        SortedLinkedList.push(list, value_);
     }
 
-    function remove(uint256 value_) external {
-        SortedArray.remove(array, value_);
-    }
-
-    function get(uint256 index_) external view returns (uint256) {
-        return SortedArray.get(array, index_);
+    function remove(uint128 value_) external {
+        SortedLinkedList.remove(list, value_);
     }
 
     function length() external view returns (uint256) {
-        return SortedArray.length(array);
+        return SortedLinkedList.length(list);
     }
 
-    function getAllValues() external view returns (uint256[] memory) {
-        return SortedArray.getAllValues(array);
+    function getAllValues() external view returns (uint128[] memory) {
+        return SortedLinkedList.getAllValues(list);
     }
 
-    function getLast() external view returns (uint256) {
-        return SortedArray.getLast(array);
+    function getLast() external view returns (uint128) {
+        return SortedLinkedList.getLast(list);
     }
 
 }

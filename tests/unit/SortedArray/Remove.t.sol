@@ -1,51 +1,51 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.7;
 
-import { SortedArrayTestBase } from "../../utils/TestBase.sol";
+import { SortedLinkedListTestBase } from "../../utils/TestBase.sol";
 
-contract RemoveTests is SortedArrayTestBase {
+contract RemoveTests is SortedLinkedListTestBase {
+
+    function test_remove_failed_valueNotExists() external {
+        vm.expectRevert("SLL:R:VALUE_NOT_EXISTS");
+        list.remove(1);
+    }
 
     function test_remove_singleValue() external {
-        array.push(1);
-        array.remove(1);
+        list.push(1);
+        list.remove(1);
 
         uint256[] memory expectedValues = new uint256[](0);
-        assertArray(expectedValues);
+        assertList(expectedValues);
 
-        assertEq(array.length(), 0);
+        assertEq(list.length(), 0);
     }
 
     function test_remove_multipleValues() external {
-        array.push(1);
-        array.push(2);
-        array.push(3);
+        list.push(1);
+        list.push(2);
+        list.push(3);
 
-        array.remove(2);
+        list.remove(2);
 
         uint256[] memory expectedValues = new uint256[](2);
         expectedValues[0]               = 1;
         expectedValues[1]               = 3;
 
-        assertArray(expectedValues);
-        assertElementAtIndex(0, 1);
-        assertElementAtIndex(1, 3);
+        assertList(expectedValues);
+        assertEq(list.length(), 2);
 
-        assertEq(array.length(), 2);
-
-        array.remove(1);
+        list.remove(1);
 
         expectedValues    = new uint256[](1);
         expectedValues[0] = 3;
 
-        assertArray(expectedValues);
-        assertElementAtIndex(0, 3);
+        assertList(expectedValues);
+        assertEq(list.length(), 1);
 
-        assertEq(array.length(), 1);
+        list.remove(3);
 
-        array.remove(3);
-
-        assertArray(new uint256[](0));
-        assertEq(array.length(), 0);
+        assertList(new uint256[](0));
+        assertEq(list.length(), 0);
     }
 
 }
