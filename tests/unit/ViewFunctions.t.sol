@@ -5,6 +5,22 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract ViewFunctionsTests is TestBase {
 
+    function test_asset() external {
+        assertEq(withdrawalManager.asset(), address(asset));
+    }
+
+    function test_globals() external {
+        assertEq(withdrawalManager.globals(), address(globals));
+    }
+
+    function test_governor() external {
+        assertEq(withdrawalManager.governor(), governor);
+    }
+
+    function test_securityAdmin() external {
+        assertEq(withdrawalManager.securityAdmin(), securityAdmin);
+    }
+
     function testFuzz_isInExitWindow(address account_) external {
         assertTrue(withdrawalManager.isInExitWindow(account_));
     }
