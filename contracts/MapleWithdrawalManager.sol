@@ -176,6 +176,32 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
     /*** State-Changing Functions - OnlyRedeemer                                                                                        ***/
     /**************************************************************************************************************************************/
 
+    function processEmptyRedemptions(uint256 numberOfRequests_) external override whenProtocolNotPaused onlyRedeemer {
+        require(numberOfRequests_ > 0, "WM:PER:ZERO_REQUESTS");
+
+        uint256 nextRequestId_     = queue.nextRequestId;
+        uint256 lastRequestId_     = queue.lastRequestId;
+        uint256 requestsProcessed_ = 0;
+
+        // Iterate through the queue and process empty requests, if the owner is address(0).
+        while (requestsProcessed_ < numberOfRequests_ && nextRequestId_ <= lastRequestId_) {
+            address owner_ = queue.requests[_toUint128(nextRequestId_)].owner;
+
+            if (owner_ != address(0)) {
+                // Stop if we encounter a non-empty request.
+                break;
+            }
+
+            ++nextRequestId_;
+            ++requestsProcessed_;
+        }
+
+        // Update the queue's next request ID.
+        queue.nextRequestId = _toUint128(nextRequestId_);
+
+        emit EmptyRedemptionsProcessed(requestsProcessed_);
+    }
+
     function processRedemptions(uint256 maxSharesToProcess_) external override whenProtocolNotPaused nonReentrant onlyRedeemer {
         require(maxSharesToProcess_ > 0, "WM:PR:ZERO_SHARES");
 

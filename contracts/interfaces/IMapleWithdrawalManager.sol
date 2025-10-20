@@ -12,6 +12,12 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**************************************************************************************************************************************/
 
     /**
+     *  @dev   Emitted when empty redemption requests are processed.
+     *  @param numberOfRequestsProcessed Number of empty requests that were processed.
+     */
+    event EmptyRedemptionsProcessed(uint256 numberOfRequestsProcessed);
+
+    /**
      *  @dev   Emitted when a manual redemption takes place.
      *  @param owner           Address of the account.
      *  @param sharesDecreased Amount of shares redeemed.
@@ -73,6 +79,15 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param owner  Address of the owner of shares.
      */
     function addShares(uint256 shares, address owner) external returns (uint256 lastRequestId);
+
+    /**
+     *  @dev   Processes empty redemption requests at the front of the queue.
+     *         Iterates through the queue starting from the front and advances the queue's nextRequestId
+     *         for each empty request encountered. Stops when a non-empty request is found or the
+     *         specified number of requests has been processed.
+     *  @param numberOfRequests Maximum number of empty requests to process.
+     */
+    function processEmptyRedemptions(uint256 numberOfRequests) external;
 
     /**
      *  @dev    Processes a withdrawal request.

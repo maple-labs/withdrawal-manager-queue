@@ -35,6 +35,7 @@ contract TestBase is Test {
     MapleWithdrawalManagerFactory internal factory;
     MapleWithdrawalManagerHarness internal withdrawalManager;
 
+    event EmptyRedemptionsProcessed(uint256 numberOfRequestsProcessed);
     event ManualWithdrawalSet(address indexed account, bool isManual);
     event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
     event RequestDecreased(uint256 indexed requestId, uint256 shares);
