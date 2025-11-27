@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.7;
 
-import { TestBase } from "../utils/TestBase.sol";
+import { TestBase, console } from "../utils/TestBase.sol";
 
 // TODO: Add ManualSharesDecreased event to tests
 contract ProcessExitTests is TestBase {
-
-    event RequestRemoved(uint128 indexed requestId);
 
     uint256 assetsDeposited = 100e18;
     uint256 sharesToRedeem  = 250e18;
@@ -45,6 +43,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         vm.prank(pm);
         vm.expectRevert("WM:PE:TOO_MANY_SHARES");
@@ -56,6 +55,8 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
+        withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         asset.burn(address(pool), assetsDeposited);
 
@@ -69,6 +70,8 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
+        withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         pool.burn(wm, 1);
 
@@ -81,7 +84,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
-        withdrawalManager.__setOwnerRequest(lp, 0);
+        withdrawalManager.__setLastRequest(lp, 2);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
 
         assertEq(pool.balanceOf(lp), 0);
@@ -93,8 +96,12 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem);
         assertEq(pool.balanceOf(wm), 0);
 
-        assertEq(withdrawalManager.totalShares(), 0);
-        assertEq(withdrawalManager.requestIds(lp), 0);
+        ( uint256 lastRequestId_, ) = getLastRequestByOwner(lp);
+        assertEq(lastRequestId_, 2);
+
+        assertEq(withdrawalManager.requestIds(lp), lastRequestId_);
+
+        assertEq(withdrawalManager.totalShares(),             0);
         assertEq(withdrawalManager.manualSharesAvailable(lp), 0);
 
         assertRequest({ requestId: 1, owner: lp, shares: sharesToRedeem });
@@ -118,19 +125,22 @@ contract ProcessExitTests is TestBase {
         assertEq(pool.balanceOf(lp), sharesToRedeem / 2);
         assertEq(pool.balanceOf(wm), sharesToRedeem / 2);
 
-        assertEq(withdrawalManager.totalShares(), sharesToRedeem / 2);
+        ( uint256 lastRequestId_, ) = getLastRequestByOwner(lp);
+        assertEq(lastRequestId_, 1);
 
-        assertEq(withdrawalManager.requestIds(lp), 1);
+        assertEq(withdrawalManager.requestIds(lp), lastRequestId_);
+
+        assertEq(withdrawalManager.totalShares(), sharesToRedeem / 2);
 
         assertRequest({ requestId: 1, owner: lp, shares: sharesToRedeem / 2 });
     }
 
     function test_processExit_automatic() external {
         vm.prank(pm);
-        ( uint256 redeemableShares, uint256 resultingAssets ) = withdrawalManager.processExit(sharesToRedeem, wm);
+        ( uint256 redeemableShares_, uint256 resultingAssets_ ) = withdrawalManager.processExit(sharesToRedeem, wm);
 
-        assertEq(redeemableShares, sharesToRedeem);
-        assertEq(resultingAssets,  assetsDeposited);
+        assertEq(redeemableShares_, sharesToRedeem);
+        assertEq(resultingAssets_,  assetsDeposited);
     }
 
 }

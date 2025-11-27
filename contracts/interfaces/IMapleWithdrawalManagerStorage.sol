@@ -36,12 +36,11 @@ interface IMapleWithdrawalManagerStorage {
     function manualSharesAvailable(address owner) external view returns (uint256 sharesAvailable);
 
     /**
-     *  @dev    Returns the request identifier of an account.
-     *          Returns zero if the account does not have a withdrawal request.
-     *  @param  account   Address of the account.
-     *  @return requestId Identifier of the withdrawal request.
+     *  @dev    Returns the amount of shares escrowed for a specific user yet to be processed.
+     *  @param  owner          The address of the owner of shares.
+     *  @return escrowedShares Amount of shares escrowed for the user.
      */
-    function requestIds(address account) external view returns (uint128 requestId);
+    function userEscrowedShares(address owner) external view returns (uint256 escrowedShares);
 
     /**
      *  @dev    Returns the first and last withdrawal requests pending redemption.
@@ -49,5 +48,5 @@ interface IMapleWithdrawalManagerStorage {
      *  @return lastRequestId Identifier of the last created withdrawal request.
      */
     function queue() external view returns (uint128 nextRequestId, uint128 lastRequestId);
-
+    
 }

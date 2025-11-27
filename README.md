@@ -29,6 +29,7 @@ forge install
 ```
 
 ## Audit Reports
+For all audit reports please refer to https://docs.maple.finance/technical-resources/security/security
 
 | Auditor | Report Link |
 |---|---|

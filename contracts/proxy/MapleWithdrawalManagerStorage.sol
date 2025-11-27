@@ -3,6 +3,8 @@ pragma solidity ^0.8.7;
 
 import { IMapleWithdrawalManagerStorage } from "../interfaces/IMapleWithdrawalManagerStorage.sol";
 
+import { SortedLinkedList } from "../utils/SortedLinkedList.sol";
+
 contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     /**************************************************************************************************************************************/
@@ -25,7 +27,7 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
     /**************************************************************************************************************************************/
 
     uint256 internal _locked;  // Used when checking for reentrancy.
-    
+
     address public override pool;
     address public override poolManager;
 
@@ -35,8 +37,12 @@ contract MapleWithdrawalManagerStorage is IMapleWithdrawalManagerStorage {
 
     mapping(address => bool) public override isManualWithdrawal;  // Defines which users use automated withdrawals (false by default).
 
-    mapping(address => uint128) public override requestIds;  // Maps users to their withdrawal requests identifiers.
+    mapping(address => uint128) internal __deprecated_requestIds;  // Maps users to their last withdrawal request.
 
     mapping(address => uint256) public override manualSharesAvailable;  // Shares available to withdraw for a given manual owner.
+
+    mapping(address => uint256) public override userEscrowedShares;  // Maps users to their escrowed shares yet to be processed.
+
+    mapping(address => SortedLinkedList.List) internal _userRequests;  // Maps users to their withdrawal requests.
 
 }

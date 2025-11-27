@@ -4,18 +4,15 @@ pragma solidity ^0.8.7;
 import { TestBase } from "../utils/TestBase.sol";
 
 contract RemoveSharesTests is TestBase {
-
-    event RequestDecreased(uint128 indexed requestId, uint256 shares);
-    event RequestRemoved(uint128 indexed requestId);
-
+    
     function setUp() public override {
         super.setUp();
 
         // Simulate LP transfer into PM.
-        pool.mint(pm, 2);
+        pool.mint(pm, 7);
 
         vm.prank(pm);
-        pool.approve(address(withdrawalManager), 2);
+        pool.approve(address(withdrawalManager), 7);
     }
 
     function test_removeShares_notPoolManager() external {
@@ -30,10 +27,12 @@ contract RemoveSharesTests is TestBase {
     }
 
     function test_removeShares_notInQueue() external {
-        assertEq(withdrawalManager.requestIds(pm), 0);
+        ( uint256 lastRequestId_,) = getLastRequestByOwner(pm);
+
+        assertEq(lastRequestId_, 0);
 
         vm.prank(pm);
-        vm.expectRevert("WM:RS:NOT_IN_QUEUE");
+        vm.expectRevert("WM:RS:INSUFFICIENT_SHARES");
         withdrawalManager.removeShares(1, lp);
     }
 
@@ -58,62 +57,157 @@ contract RemoveSharesTests is TestBase {
     }
 
     function test_removeShares_success_decreaseRequest() external {
+        uint256 lastRequestId_;
+
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
-        ( , uint128 lastRequestId ) = withdrawalManager.queue();
-
-        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId);
-
-        assertEq(shares_,                              2);
-        assertEq(withdrawalManager.totalShares(),      2);
-        assertEq(lastRequestId,                        1);
-        assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         vm.expectEmit();
         emit RequestDecreased(1, 1);
 
         vm.prank(pm);
-        withdrawalManager.removeShares(1, lp);
+        uint256 sharesReturned_ = withdrawalManager.removeShares(1, lp);
 
-        ( , lastRequestId ) = withdrawalManager.queue();
+        assertEq(sharesReturned_                         , 1);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
-        ( , shares_ ) = withdrawalManager.requests(lastRequestId);
+        ( , lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(shares_,                              1);
-        assertEq(withdrawalManager.totalShares(),      1);
-        assertEq(lastRequestId,                        1);
-        assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+        ( address owner_ , uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        ( lastRequestId_, ) = getLastRequestByOwner(owner_);
+
+        assertEq(shares_,                         1);
+        assertEq(withdrawalManager.totalShares(), 1);
+        assertEq(lastRequestId_,                  1);
     }
 
     function test_removeShares_success_cancelRequest() external {
+        uint256 lastRequestId_;
+
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
-        ( , uint128 lastRequestId ) = withdrawalManager.queue();
-
-        ( address owner_, uint256 shares_ ) = withdrawalManager.requests(lastRequestId);
-
-        assertEq(shares_,                              2);
-        assertEq(withdrawalManager.totalShares(),      2);
-        assertEq(lastRequestId,                        1);
-        assertEq(withdrawalManager.requestIds(owner_), lastRequestId);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         vm.expectEmit();
         emit RequestRemoved(1);
 
         vm.prank(pm);
-        withdrawalManager.removeShares(2, lp);
+        uint256 sharesReturned_ = withdrawalManager.removeShares(2, lp);
 
-        ( , lastRequestId ) = withdrawalManager.queue();
+        assertEq(sharesReturned_, 2);
 
-        ( owner_, shares_ ) = withdrawalManager.requests(lastRequestId);
+        ( , lastRequestId_ ) = withdrawalManager.queue();
 
-        assertEq(lastRequestId,                        1);
-        assertEq(owner_,                               address(0));
-        assertEq(shares_,                              0);
-        assertEq(withdrawalManager.requestIds(owner_), 0);
-        assertEq(withdrawalManager.totalShares(),      0);
+        ( address owner_ , uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
+
+        ( lastRequestId_, ) = getLastRequestByOwner(owner_);
+
+        assertEq(lastRequestId_,                  0);
+        assertEq(owner_,                          address(0));
+        assertEq(shares_,                         0);
+        assertEq(withdrawalManager.totalShares(), 0);
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+    }
+
+    function test_removeShares_success_partial_multipleRequests() external {
+        vm.startPrank(pm);
+        withdrawalManager.addShares(2, lp);
+        withdrawalManager.addShares(4, lp);
+        withdrawalManager.addShares(1, lp);
+        vm.stopPrank();
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 7);
+        assertEq(withdrawalManager.totalShares()         , 7);
+
+        ( uint256[] memory requestIds_, uint256[] memory shares_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(requestIds_.length, 3);
+        assertEq(shares_.length    , 3);
+
+        ( uint256 lastRequestId_, uint256 lastShares_ ) = getLastRequestByOwner(lp);
+
+        assertEq(lastRequestId_, 3);
+        assertEq(lastShares_   , 1);
+
+        vm.prank(pm);
+        uint256 sharesReturned_ = withdrawalManager.removeShares(3, lp);
+
+        assertEq(sharesReturned_,                          3);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 4);
+        assertEq(withdrawalManager.totalShares()         , 4);
+
+        ( lastRequestId_, lastShares_ ) = getLastRequestByOwner(lp);
+
+        assertEq(lastRequestId_, 2);
+        assertEq(lastShares_   , 2);
+
+        ( requestIds_, shares_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(requestIds_.length, 2);
+        assertEq(shares_.length    , 2);
+
+        assertRequest(1, lp, 2);
+        assertRequest(2, lp, 2);
+
+        vm.prank(pm);
+        sharesReturned_ = withdrawalManager.removeShares(2, lp);
+
+        assertEq(sharesReturned_,                          2);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 2);
+        assertEq(withdrawalManager.totalShares()         , 2);
+
+        ( requestIds_, shares_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(requestIds_.length, 1);
+        assertEq(shares_.length    , 1);
+
+        assertRequest(1, lp, 2);
+    }
+
+    function test_removeShares_success_cancelAllRequests() external {
+        vm.startPrank(pm);
+        withdrawalManager.addShares(2, lp);
+        withdrawalManager.addShares(4, lp);
+        withdrawalManager.addShares(1, lp);
+        vm.stopPrank();
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 7);
+        assertEq(withdrawalManager.totalShares()         , 7);
+
+        ( uint256[] memory requestIds_, uint256[] memory shares_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(requestIds_.length, 3);
+        assertEq(shares_.length    , 3);
+
+        ( uint256 lastRequestId_, uint256 lastShares_ ) = getLastRequestByOwner(lp);
+
+        assertEq(lastRequestId_, 3);
+        assertEq(lastShares_   , 1);
+
+        vm.prank(pm);
+        uint256 sharesReturned_ = withdrawalManager.removeShares(7, lp);
+
+        assertEq(sharesReturned_,                          7);
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+        assertEq(withdrawalManager.totalShares()         , 0);
+
+        ( requestIds_, shares_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(requestIds_.length, 0);
+        assertEq(shares_.length    , 0);
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+        assertEq(withdrawalManager.totalShares()         , 0);
+
+        ( lastRequestId_, lastShares_ ) = getLastRequestByOwner(lp);
+
+        assertEq(lastRequestId_, 0);
+        assertEq(lastShares_   , 0);
     }
 
 }

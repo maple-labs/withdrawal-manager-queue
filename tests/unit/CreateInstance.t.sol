@@ -74,9 +74,9 @@ contract CreateInstanceTests is TestBase {
         assertEq(withdrawalManager_.pool(),        address(pool));
         assertEq(withdrawalManager_.poolManager(), pm);
 
-        ( uint128 nextRequestId, ) = withdrawalManager_.queue();
+        ( uint128 nextRequestId_, ) = withdrawalManager_.queue();
 
-        assertEq(nextRequestId, 1);
+        assertEq(nextRequestId_, 1);
     }
 
 }

@@ -12,6 +12,12 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**************************************************************************************************************************************/
 
     /**
+     *  @dev   Emitted when empty redemption requests are processed.
+     *  @param numberOfRequestsProcessed Number of empty requests that were processed.
+     */
+    event EmptyRedemptionsProcessed(uint256 numberOfRequestsProcessed);
+
+    /**
      *  @dev   Emitted when a manual redemption takes place.
      *  @param owner           Address of the account.
      *  @param sharesDecreased Amount of shares redeemed.
@@ -20,10 +26,11 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
 
     /**
      *  @dev   Emitted when a manual redemption is processed.
+     *  @param requestId   Identifier of the withdrawal request.
      *  @param owner       Address of the account.
      *  @param sharesAdded Amount of shares added to the redeemable amount.
      */
-    event ManualSharesIncreased(address indexed owner, uint256 sharesAdded);
+    event ManualSharesIncreased(uint256 indexed requestId, address indexed owner, uint256 sharesAdded);
 
     /**
      *  @dev   Emitted when the withdrawal type of an account is updated.
@@ -38,14 +45,14 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param owner     Address of the owner of the shares.
      *  @param shares    Amount of shares requested for redemption.
      */
-    event RequestCreated(uint128 indexed requestId, address indexed owner, uint256 shares);
+    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
 
     /**
      *  @dev   Emitted when a withdrawal request is updated.
      *  @param requestId Identifier of the withdrawal request.
      *  @param shares    Amount of shares reduced during a redemption request.
      */
-    event RequestDecreased(uint128 indexed requestId, uint256 shares);
+    event RequestDecreased(uint256 indexed requestId, uint256 shares);
 
     /**
      *  @dev   Emitted when a withdrawal request is processed.
@@ -54,13 +61,13 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param shares    Amount of redeemable shares.
      *  @param assets    Amount of withdrawable assets.
      */
-    event RequestProcessed(uint128 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
+    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
 
     /**
      *  @dev   Emitted when a withdrawal request is removed.
      *  @param requestId Identifier of the withdrawal request.
      */
-    event RequestRemoved(uint128 indexed requestId);
+    event RequestRemoved(uint256 indexed requestId);
 
     /**************************************************************************************************************************************/
     /*** State-Changing Functions                                                                                                       ***/
@@ -71,7 +78,16 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @param shares Amount of shares to add.
      *  @param owner  Address of the owner of shares.
      */
-    function addShares(uint256 shares, address owner) external;
+    function addShares(uint256 shares, address owner) external returns (uint256 lastRequestId);
+
+    /**
+     *  @dev   Processes empty redemption requests at the front of the queue.
+     *         Iterates through the queue starting from the front and advances the queue's nextRequestId
+     *         for each empty request encountered. Stops when a non-empty request is found or the
+     *         specified number of requests has been processed.
+     *  @param numberOfRequests Maximum number of empty requests to process.
+     */
+    function processEmptyRedemptions(uint256 numberOfRequests) external;
 
     /**
      *  @dev    Processes a withdrawal request.
@@ -100,11 +116,22 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function removeShares(uint256 shares, address owner) external returns (uint256 sharesReturned);
 
     /**
-     *  @dev   Removes a withdrawal request from the queue.
-     *         Can only be called by the pool delegate.
-     *  @param owner Address of the owner of shares.
+     *  @dev    Remove shares from a specific withdrawal request.
+     *  @param  requestId       Identifier of the withdrawal request that is being updated.
+     *  @param  sharesToRemove  Amount of shares to remove from the request.
+     *  @return sharesReturned  Amount of shares that were returned.
+     *  @return sharesRemaining Amount of shares remaining in the request.
      */
-    function removeRequest(address owner) external;
+    function removeSharesById(uint256 requestId, uint256 sharesToRemove) external returns (uint256 sharesReturned, uint256 sharesRemaining);
+
+    /**
+     *  @dev   Removes withdrawal requests from the queue.
+     *         Can only be called by the pool delegate.
+     *         NOTE: Not to be used in a router based system where the router is managing user requests.
+     *  @param owner      Address of the owner of shares.
+     *  @param requestIds Array of identifiers of the withdrawal requests to remove.
+     */
+    function removeRequest(address owner, uint256[] calldata requestIds) external;
 
     /**
      *  @dev   Defines if an account will withdraw shares manually or automatically.
@@ -138,24 +165,24 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**
      *  @dev    Returns if a user is able to withdraw. Required for compatibility with pool managers.
      *          NOTE: Always returns true to fulfil interface requirements.
-     *  @param  owner_          The account to check if it's in withdraw window.
-     *  @return isInExitWindow_ True if the account is in the withdraw window.
+     *  @param  owner          The account to check if it's in withdraw window.
+     *  @return isInExitWindow True if the account is in the withdraw window.
      */
-    function isInExitWindow(address owner_) external view returns (bool isInExitWindow_);
+    function isInExitWindow(address owner) external view returns (bool isInExitWindow);
 
     /**
      *  @dev    Gets the total amount of funds that need to be locked to fulfill exits.
      *          NOTE: Always zero for this implementation.
-     *  @return lockedLiquidity_ The amount of locked liquidity.
+     *  @return lockedLiquidity The amount of locked liquidity.
      */
-    function lockedLiquidity() external view returns (uint256 lockedLiquidity_);
+    function lockedLiquidity() external view returns (uint256 lockedLiquidity);
 
     /**
      *  @dev    Gets the amount of locked shares for an account.
-     *  @param  owner_        The address to check the exit for.
-     *  @return lockedShares_ The amount of manual shares available.
+     *  @param  owner        The address to check the exit for.
+     *  @return lockedShares The amount of manual shares available.
      */
-    function lockedShares(address owner_) external view returns (uint256 lockedShares_);
+    function lockedShares(address owner) external view returns (uint256 lockedShares);
 
     /**
      *  @dev   Returns the address of the pool delegate.
@@ -176,12 +203,20 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**
      *  @dev    Gets the amount of shares that can be withdrawn.
      *          NOTE: Values just passed through as withdraw is not implemented.
-     *  @param  owner_            The address to check the withdrawal for.
-     *  @param  assets_           The amount of requested shares to withdraw.
-     *  @return redeemableAssets_ The amount of assets that can be withdrawn.
-     *  @return resultingShares_  The amount of shares that will be burned.
+     *  @param  owner            The address to check the withdrawal for.
+     *  @param  assets           The amount of requested shares to withdraw.
+     *  @return redeemableAssets The amount of assets that can be withdrawn.
+     *  @return resultingShares  The amount of shares that will be burned.
      */
-    function previewWithdraw(address owner_, uint256 assets_) external view returns (uint256 redeemableAssets_, uint256 resultingShares_);
+    function previewWithdraw(address owner, uint256 assets) external view returns (uint256 redeemableAssets, uint256 resultingShares);
+
+    /**
+     *  @dev    Returns the last request id for a given owner.
+     *          Function must exist for backwards compatibility with the old implementation where we supported only one request per owner.
+     *  @param  owner          The account to check the last request id for.
+     *  @return requestId      The id of the last valid withdrawal request for the account.
+     */
+    function requestIds(address owner) external view returns (uint256 requestId);
 
     /**
      *  @dev    Returns the owner and amount of shares associated with a withdrawal request.
@@ -189,7 +224,16 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return owner     Address of the share owner.
      *  @return shares    Amount of shares pending redemption.
      */
-    function requests(uint128 requestId) external view returns (address owner, uint256 shares);
+    function requests(uint256 requestId) external view returns (address owner, uint256 shares);
+
+    /**
+     *  @dev    Returns the pending requests by owner.
+     *          NOTE: This function may run out of gas if there are too many requests. Use the overload with pagination.
+     *  @param  owner Address of the account to check for pending requests.
+     *  @return requestIds Array of request identifiers.
+     *  @return shares     Array of shares associated with each request.
+     */
+    function requestsByOwner(address owner) external view returns (uint256[] memory requestIds, uint256[] memory shares);
 
     /**
      *  @dev   Returns the address of the security admin.

@@ -5,8 +5,6 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract SetManualWithdrawalTests is TestBase {
 
-    event ManualWithdrawalSet(address indexed account, bool isManual);
-
     function test_setManualWithdrawal_protocolPaused() external {
         globals.__setFunctionPaused(true);
 
@@ -14,16 +12,14 @@ contract SetManualWithdrawalTests is TestBase {
         withdrawalManager.setManualWithdrawal(lp, true);
     }
 
-    function test_setManualWithdrawal_notProtocolAdmin() external {
-        vm.expectRevert("WM:NOT_PD_OR_GOV_OR_OA");
+    function test_setManualWithdrawal_notPoolDelegateOrOpsAdmin() external {
+        vm.expectRevert("WM:NOT_POOL_DELEG_OR_OPS_ADMIN");
         withdrawalManager.setManualWithdrawal(lp, true);
     }
 
-    function test_setManualWithdrawal_existingRequest() external {
-        withdrawalManager.__setRequest(1, lp, 100e18);
-
-        vm.prank(poolDelegate);
-        vm.expectRevert("WM:SMW:IN_QUEUE");
+    function test_setManualWithdrawal_governotNotAllowed() external {
+        vm.prank(governor);
+        vm.expectRevert("WM:NOT_POOL_DELEG_OR_OPS_ADMIN");
         withdrawalManager.setManualWithdrawal(lp, true);
     }
 

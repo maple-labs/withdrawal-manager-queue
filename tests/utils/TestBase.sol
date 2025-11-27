@@ -10,6 +10,8 @@ import { MapleWithdrawalManagerInitializer } from "../../contracts/proxy/MapleWi
 import { MapleWithdrawalManagerHarness }                       from "./Harnesses.sol";
 import { MockFactory, MockGlobals, MockPool, MockPoolManager } from "./Mocks.sol";
 
+import { SortedLinkedListHarness } from "./Harnesses.sol";
+
 contract TestBase is Test {
 
     address internal governor         = makeAddr("governor");
@@ -32,6 +34,13 @@ contract TestBase is Test {
 
     MapleWithdrawalManagerFactory internal factory;
     MapleWithdrawalManagerHarness internal withdrawalManager;
+
+    event EmptyRedemptionsProcessed(uint256 numberOfRequestsProcessed);
+    event ManualWithdrawalSet(address indexed account, bool isManual);
+    event RequestCreated(uint256 indexed requestId, address indexed owner, uint256 shares);
+    event RequestDecreased(uint256 indexed requestId, uint256 shares);
+    event RequestProcessed(uint256 indexed requestId, address indexed owner, uint256 shares, uint256 assets);
+    event RequestRemoved(uint256 indexed requestId);
 
     function setUp() public virtual {
         // Create all mocks.
@@ -71,18 +80,45 @@ contract TestBase is Test {
         wm = address(withdrawalManager);
     }
 
-    function assertRequest(uint128 requestId, address owner, uint256 shares) internal {
+    function assertRequest(uint256 requestId, address owner, uint256 shares) internal {
         ( address owner_, uint256 shares_ ) = withdrawalManager.requests(requestId);
 
         assertEq(owner_,  owner);
         assertEq(shares_, shares);
     }
 
-    function assertQueue(uint128 nextRequestId, uint128 lastRequestId) internal {
-        ( uint128 nextRequestId_, uint128 lastRequestId_ ) = withdrawalManager.queue();
+    function assertQueue(uint256 nextRequestId, uint256 lastRequestId) internal {
+        ( uint256 nextRequestId_, uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(nextRequestId_, nextRequestId);
         assertEq(lastRequestId_, lastRequestId);
     }
 
+    function getLastRequestByOwner(address owner) internal view returns (uint256 lastRequestId, uint256 shares) {
+        ( uint256[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(owner);
+
+        return requestIds_.length == 0 ? (0,0) : (requestIds_[requestIds_.length - 1], shares_[shares_.length - 1]);
+    }
+
 }
+
+contract SortedLinkedListTestBase is Test {
+
+    SortedLinkedListHarness public list;
+
+    function setUp() public virtual {
+        list = new SortedLinkedListHarness();
+    }
+
+    function assertList(uint256[] memory values) internal {
+        assertEq(list.length(), values.length);
+
+        uint128[] memory listValues = list.getAllValues();
+
+        for (uint256 i = 0; i < values.length; i++) {
+            assertEq(uint256(listValues[i]), values[i]);
+        }
+    }
+
+}
+
