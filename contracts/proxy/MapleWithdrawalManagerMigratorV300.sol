@@ -7,21 +7,20 @@ import { SortedLinkedList } from "../utils/SortedLinkedList.sol";
 
 import { MapleWithdrawalManagerStorage } from "./MapleWithdrawalManagerStorage.sol";
 
-contract MapleWithdrawalManagerMigratorV200 is MapleProxiedInternals, MapleWithdrawalManagerStorage {
+contract MapleWithdrawalManagerMigratorV300 is MapleProxiedInternals, MapleWithdrawalManagerStorage {
 
     fallback() external {
-        uint128 nextRequestId_ = queue.nextRequestId;
-        uint128 lastRequestId_ = queue.lastRequestId;
+        uint128 nextRequestId_ = _queue.__deprecated_nextRequestId;
+        uint128 lastRequestId_ = _queue.lastRequestId;
 
         for (uint128 i = nextRequestId_; i <= lastRequestId_; ++i) {
-            WithdrawalRequest memory request_ = queue.requests[i];
-
+            WithdrawalRequest memory request_ = _queue.requests[i];
             if (request_.owner == address(0)) continue;
 
-            userEscrowedShares[request_.owner] += request_.shares;
-
-            SortedLinkedList.push(_userRequests[request_.owner], i);
+            SortedLinkedList.push(_pendingRequestIds, i);
         }
+
+        _queue.__deprecated_nextRequestId = 0;
     }
 
 }

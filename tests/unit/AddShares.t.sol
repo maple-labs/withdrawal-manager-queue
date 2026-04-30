@@ -33,6 +33,12 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
+        uint256[] memory pendingRequestIds_ = new uint256[](2);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 2);
@@ -71,6 +77,11 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         ( , lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 1);
@@ -91,6 +102,11 @@ contract AddSharesTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
 
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         ( , lastRequestId_ ) = withdrawalManager.queue();
 
         assertEq(lastRequestId_, 1);
@@ -106,6 +122,11 @@ contract AddSharesTests is TestBase {
 
         vm.prank(pm);
         withdrawalManager.addShares(1, lp);
+
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
 
         ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
@@ -127,6 +148,12 @@ contract AddSharesTests is TestBase {
 
         vm.prank(pm);
         withdrawalManager.addShares(1, lp2);
+
+        pendingRequestIds_ = new uint256[](2);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+
+        assertPendingRequestIds(pendingRequestIds_);
 
         ( , lastRequestId_ ) = withdrawalManager.queue();
 

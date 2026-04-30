@@ -42,7 +42,7 @@ contract ProcessExitTests is TestBase {
     function test_processExit_tooManyShares_notProcessed() external {
         withdrawalManager.__setManualWithdrawal(lp, true);
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
-        withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setQueue(1);
         withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         vm.prank(pm);
@@ -55,7 +55,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
-        withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setQueue(1);
         withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         asset.burn(address(pool), assetsDeposited);
@@ -70,7 +70,7 @@ contract ProcessExitTests is TestBase {
         withdrawalManager.__setRequest(1, lp, sharesToRedeem);
         withdrawalManager.__setTotalShares(sharesToRedeem);
         withdrawalManager.__setManualSharesAvailable(lp, sharesToRedeem);
-        withdrawalManager.__setQueue(1, 1);
+        withdrawalManager.__setQueue(1);
         withdrawalManager.__setUserRequestCount(lp, 1, sharesToRedeem);
 
         pool.burn(wm, 1);

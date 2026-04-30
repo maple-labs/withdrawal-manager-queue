@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 sizes=$(forge build --sizes)
-names=($(cat ./configs/package.yaml | grep "    contractName:" | sed -r 's/.{18}//'))
+names=($(cat ./configs/package.yml | grep "    contractName:" | sed -r 's/.{18}//'))
 
 for i in "${!names[@]}"; do
     line=$(echo "$sizes" | grep -w "${names[i]}")

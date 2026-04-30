@@ -94,6 +94,16 @@ contract TestBase is Test {
         assertEq(lastRequestId_, lastRequestId);
     }
 
+    function assertPendingRequestIds(uint256[] memory requestIds) internal {
+        ( uint256[] memory requestIds_, , ) = withdrawalManager.pendingRequestIds(0, type(uint256).max);
+
+        assertEq(requestIds_.length, requestIds.length);
+
+        for (uint256 i; i < requestIds_.length; ++i) {
+            assertEq(requestIds_[i], requestIds[i]);
+        }
+    }
+
     function getLastRequestByOwner(address owner) internal view returns (uint256 lastRequestId, uint256 shares) {
         ( uint256[] memory requestIds_, uint256[] memory shares_) = withdrawalManager.requestsByOwner(owner);
 
@@ -121,4 +131,3 @@ contract SortedLinkedListTestBase is Test {
     }
 
 }
-

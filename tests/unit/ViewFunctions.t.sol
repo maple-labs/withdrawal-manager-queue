@@ -59,7 +59,7 @@ contract ViewFunctionsTests is TestBase {
         withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
         withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
 
-        withdrawalManager.__setQueue(1, 5);
+        withdrawalManager.__setQueue(5);
 
         (uint256[] memory requestIdsLp1_, uint256[] memory sharesLp1_) = withdrawalManager.requestsByOwner(lp1);
         (uint256[] memory requestIdsLp2_, uint256[] memory sharesLp2_) = withdrawalManager.requestsByOwner(lp2);
@@ -112,7 +112,7 @@ contract ViewFunctionsTests is TestBase {
         withdrawalManager.__setUserRequestCount(lp3, 1, assetsDeposited_);
         withdrawalManager.__setUserRequestCount(lp4, 1, assetsDeposited_);
 
-        withdrawalManager.__setQueue(1, 5);
+        withdrawalManager.__setQueue(5);
 
         (address ownerLp1_, uint256 sharesLp1_) = withdrawalManager.requests(1);
         (address ownerLp2_, uint256 sharesLp2_) = withdrawalManager.requests(2);
@@ -134,6 +134,38 @@ contract ViewFunctionsTests is TestBase {
 
         assertEq(ownerLp1_2_, lp);
         assertEq(sharesLp1_2_, assetsDeposited_);
+    }
+
+    function test_pendingRequestIds() external {
+        address lp1 = makeAddr("lp1");
+        address lp2 = makeAddr("lp2");
+        address lp3 = makeAddr("lp3");
+
+        uint256 assetsDeposited_ = 100e18;
+
+        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
+        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
+        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
+
+        withdrawalManager.__setQueue(3);
+
+        (uint256[] memory requestIds_, address[] memory owners_, uint256[] memory shares_) = withdrawalManager.pendingRequestIds(0, 10);
+
+        assertEq(requestIds_.length, 3);
+        assertEq(owners_.length,     3);
+        assertEq(shares_.length,     3);
+
+        assertEq(requestIds_[0], 1);
+        assertEq(requestIds_[1], 2);
+        assertEq(requestIds_[2], 3);
+
+        assertEq(owners_[0], lp1);
+        assertEq(owners_[1], lp2);
+        assertEq(owners_[2], lp3);
+
+        assertEq(shares_[0], assetsDeposited_);
+        assertEq(shares_[1], assetsDeposited_);
+        assertEq(shares_[2], assetsDeposited_);
     }
 
 }

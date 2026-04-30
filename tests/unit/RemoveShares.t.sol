@@ -73,6 +73,11 @@ contract RemoveSharesTests is TestBase {
         assertEq(sharesReturned_                         , 1);
         assertEq(withdrawalManager.userEscrowedShares(lp), 1);
 
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         ( , lastRequestId_ ) = withdrawalManager.queue();
 
         ( address owner_ , uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
@@ -100,6 +105,8 @@ contract RemoveSharesTests is TestBase {
 
         assertEq(sharesReturned_, 2);
 
+        assertPendingRequestIds(new uint256[](0));
+
         ( , lastRequestId_ ) = withdrawalManager.queue();
 
         ( address owner_ , uint256 shares_ ) = withdrawalManager.requests(lastRequestId_);
@@ -121,6 +128,13 @@ contract RemoveSharesTests is TestBase {
         withdrawalManager.addShares(1, lp);
         vm.stopPrank();
 
+        uint256[] memory pendingRequestIds_ = new uint256[](3);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+        pendingRequestIds_[2] = 3;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         assertEq(withdrawalManager.userEscrowedShares(lp), 7);
         assertEq(withdrawalManager.totalShares()         , 7);
 
@@ -140,6 +154,12 @@ contract RemoveSharesTests is TestBase {
         assertEq(sharesReturned_,                          3);
         assertEq(withdrawalManager.userEscrowedShares(lp), 4);
         assertEq(withdrawalManager.totalShares()         , 4);
+
+        pendingRequestIds_ = new uint256[](2);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+
+        assertPendingRequestIds(pendingRequestIds_);
 
         ( lastRequestId_, lastShares_ ) = getLastRequestByOwner(lp);
 
@@ -161,6 +181,11 @@ contract RemoveSharesTests is TestBase {
         assertEq(withdrawalManager.userEscrowedShares(lp), 2);
         assertEq(withdrawalManager.totalShares()         , 2);
 
+        pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         ( requestIds_, shares_ ) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(requestIds_.length, 1);
@@ -175,6 +200,13 @@ contract RemoveSharesTests is TestBase {
         withdrawalManager.addShares(4, lp);
         withdrawalManager.addShares(1, lp);
         vm.stopPrank();
+
+        uint256[] memory pendingRequestIds_ = new uint256[](3);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+        pendingRequestIds_[2] = 3;
+
+        assertPendingRequestIds(pendingRequestIds_);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 7);
         assertEq(withdrawalManager.totalShares()         , 7);
@@ -195,6 +227,8 @@ contract RemoveSharesTests is TestBase {
         assertEq(sharesReturned_,                          7);
         assertEq(withdrawalManager.userEscrowedShares(lp), 0);
         assertEq(withdrawalManager.totalShares()         , 0);
+
+        assertPendingRequestIds(new uint256[](0));
 
         ( requestIds_, shares_ ) = withdrawalManager.requestsByOwner(lp);
 

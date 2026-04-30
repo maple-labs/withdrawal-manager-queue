@@ -57,6 +57,11 @@ contract RemoveRequestTests is TestBase {
         vm.prank(pm);
         withdrawalManager.addShares(2, lp);
 
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
         ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
@@ -94,6 +99,8 @@ contract RemoveRequestTests is TestBase {
         assertEq(withdrawalManager.totalShares(), 0);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+
+        assertPendingRequestIds(new uint256[](0));
     }
 
     function test_removeRequest_multiple_requests_success() external {
@@ -104,6 +111,13 @@ contract RemoveRequestTests is TestBase {
         withdrawalManager.addShares(1, lp);
         withdrawalManager.addShares(1, lp);
         vm.stopPrank();
+
+        uint256[] memory pendingRequestIds_ = new uint256[](3);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 2;
+        pendingRequestIds_[2] = 3;
+
+        assertPendingRequestIds(pendingRequestIds_);
 
         ( , uint256 lastRequestId_ ) = withdrawalManager.queue();
 
@@ -143,6 +157,12 @@ contract RemoveRequestTests is TestBase {
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 2);
 
+        pendingRequestIds_ = new uint256[](2);
+        pendingRequestIds_[0] = 1;
+        pendingRequestIds_[1] = 3;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
         requestIds = new uint256[](2);
         requestIds[0] = 1;
         requestIds[1] = 3;
@@ -169,6 +189,8 @@ contract RemoveRequestTests is TestBase {
         assertEq(withdrawalManager.totalShares(), 0);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+
+        assertPendingRequestIds(new uint256[](0));
     }
 
 }

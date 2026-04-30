@@ -12,12 +12,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     /**************************************************************************************************************************************/
 
     /**
-     *  @dev   Emitted when empty redemption requests are processed.
-     *  @param numberOfRequestsProcessed Number of empty requests that were processed.
-     */
-    event EmptyRedemptionsProcessed(uint256 numberOfRequestsProcessed);
-
-    /**
      *  @dev   Emitted when a manual redemption takes place.
      *  @param owner           Address of the account.
      *  @param sharesDecreased Amount of shares redeemed.
@@ -81,15 +75,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function addShares(uint256 shares, address owner) external returns (uint256 lastRequestId);
 
     /**
-     *  @dev   Processes empty redemption requests at the front of the queue.
-     *         Iterates through the queue starting from the front and advances the queue's nextRequestId
-     *         for each empty request encountered. Stops when a non-empty request is found or the
-     *         specified number of requests has been processed.
-     *  @param numberOfRequests Maximum number of empty requests to process.
-     */
-    function processEmptyRedemptions(uint256 numberOfRequests) external;
-
-    /**
      *  @dev    Processes a withdrawal request.
      *          Uses the current exchange rate to calculate the amount of assets withdrawn.
      *  @param  shares           Amount of shares that should be redeemed.
@@ -100,12 +85,11 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function processExit(uint256 shares, address owner) external returns (uint256 redeemableShares, uint256 resultingAssets);
 
     /**
-     *  @dev   Processes pending redemption requests.
-     *         Requests are processed in the order they were submitted.
-     *         Automatic withdrawal requests will be fulfilled atomically.
-     *  @param maxSharesToProcess Maximum number of shares that will be processed during the call.
+     *  @dev   Processes pending redemption requests in any order.
+     *         Requests are processed atomically and must be fully fulfilled.
+     *  @param requestIds Array of request identifiers to process.
      */
-    function processRedemptions(uint256 maxSharesToProcess) external;
+    function processRedemptions(uint256[] calldata requestIds) external;
 
     /**
      *  @dev    Removes shares from the withdrawal manager.
@@ -126,7 +110,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
 
     /**
      *  @dev   Removes withdrawal requests from the queue.
-     *         Can only be called by the pool delegate.
      *         NOTE: Not to be used in a router based system where the router is managing user requests.
      *  @param owner      Address of the owner of shares.
      *  @param requestIds Array of identifiers of the withdrawal requests to remove.
@@ -211,6 +194,13 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function previewWithdraw(address owner, uint256 assets) external view returns (uint256 redeemableAssets, uint256 resultingShares);
 
     /**
+     *  @dev    Returns the first and last withdrawal requests pending redemption.
+     *  @return nextRequestId Identifier of the smallest pending withdrawal request (or lastRequestId + 1 if none are pending).
+     *  @return lastRequestId Identifier of the last created withdrawal request.
+     */
+    function queue() external view returns (uint128 nextRequestId, uint128 lastRequestId);
+
+    /**
      *  @dev    Returns the last request id for a given owner.
      *          Function must exist for backwards compatibility with the old implementation where we supported only one request per owner.
      *  @param  owner          The account to check the last request id for.
@@ -225,6 +215,21 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
      *  @return shares    Amount of shares pending redemption.
      */
     function requests(uint256 requestId) external view returns (address owner, uint256 shares);
+
+    /**
+     *  @dev    Returns pending request IDs with pagination, along with their owners and share amounts.
+     *  @param  start      Number of elements to skip from the head of the list.
+     *  @param  limit      Maximum number of elements to return.
+     *  @return requestIds Array of pending request identifiers.
+     *  @return owners     Array of owners associated with each request.
+     *  @return shares     Array of shares associated with each request.
+     */
+    function pendingRequestIds(uint256 start, uint256 limit)
+        external view returns (
+            uint256[] memory requestIds,
+            address[] memory owners,
+            uint256[] memory shares
+        );
 
     /**
      *  @dev    Returns the pending requests by owner.
