@@ -25,13 +25,13 @@ contract ViewFunctionsTests is TestBase {
         assertTrue(withdrawalManager.isInExitWindow(account_));
     }
 
-    function test_lockedLiquidity() external {
-        assertEq(withdrawalManager.lockedLiquidity(), 0);
+    function test_maxRedeem_noSharesAvailable(address account_) external {
+        assertEq(withdrawalManager.maxRedeem(account_), 0);
     }
 
-    function test_lockedShares(address account_, uint256 shares_) external {
+    function test_maxRedeem(address account_, uint256 shares_) external {
         withdrawalManager.__setManualSharesAvailable(account_, shares_);
-        assertEq(withdrawalManager.lockedShares(account_), shares_);
+        assertEq(withdrawalManager.maxRedeem(account_), shares_);
     }
 
     function test_previewWithdraw(address account_, uint256 shares_) external {

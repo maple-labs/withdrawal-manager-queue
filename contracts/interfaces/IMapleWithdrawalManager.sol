@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.0;
 
 import { IMapleProxied } from "../../modules/maple-proxy-factory/contracts/interfaces/IMapleProxied.sol";
 
@@ -154,18 +154,12 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function isInExitWindow(address owner) external view returns (bool isInExitWindow);
 
     /**
-     *  @dev    Gets the total amount of funds that need to be locked to fulfill exits.
-     *          NOTE: Always zero for this implementation.
-     *  @return lockedLiquidity The amount of locked liquidity.
+     *  @dev    Returns the maximum amount of shares that can be redeemed by an account.
+     *          NOTE: Only manual withdrawal accounts have shares available to redeem.
+     *  @param  owner               The address to check the maximum redeemable shares for.
+     *  @return maxRedeemableShares The maximum amount of shares that can be redeemed.
      */
-    function lockedLiquidity() external view returns (uint256 lockedLiquidity);
-
-    /**
-     *  @dev    Gets the amount of locked shares for an account.
-     *  @param  owner        The address to check the exit for.
-     *  @return lockedShares The amount of manual shares available.
-     */
-    function lockedShares(address owner) external view returns (uint256 lockedShares);
+    function maxRedeem(address owner) external view returns (uint256 maxRedeemableShares);
 
     /**
      *  @dev   Returns the address of the pool delegate.

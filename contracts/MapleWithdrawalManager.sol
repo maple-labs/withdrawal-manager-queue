@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.7;
+pragma solidity 0.8.28;
 
 import { ERC20Helper }           from "../modules/erc20-helper/src/ERC20Helper.sol";
 import { IMapleProxyFactory }    from "../modules/maple-proxy-factory/contracts/interfaces/IMapleProxyFactory.sol";
@@ -436,15 +436,8 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         isInExitWindow_ = true;
     }
 
-    function lockedLiquidity() external pure override returns (uint256 lockedLiquidity_) {
-        // At the Pool Delegate's discretion whether to service withdrawals or fund loans.
-        // NOTE: Always zero.
-        return lockedLiquidity_;
-    }
-
-    function lockedShares(address owner_) external view override returns (uint256 lockedShares_) {
-        // Used for maxRedeem and requires a redemption request to be processed.
-        lockedShares_ = manualSharesAvailable[owner_];
+    function maxRedeem(address owner_) external view override returns (uint256 maxRedeemableShares_) {
+        maxRedeemableShares_ = manualSharesAvailable[owner_];
     }
 
     function poolDelegate() public view override returns (address poolDelegate_) {

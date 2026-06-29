@@ -1,6 +1,6 @@
 {
   "modules/erc20": {
-    "rev": "3c5b81673a4f58184e376bda036a63dae6124610"
+    "rev": "baf791a9f894b0b319a2d42d5b9f8d30349ebaad"
   },
   "modules/erc20-helper": {
     "rev": "2ecb2f4d2505007213b50d7bb9e942cf69b40834"
@@ -9,6 +9,6 @@
     "rev": "1d9650e951204a0ddce9ff89c32f1997984cef4d"
   },
   "modules/maple-proxy-factory": {
-    "rev": "c5405f964e10385b46c4c00e53a606d74679b93f"
+    "rev": "78057cd6415ed2938ffa02b155fa02e0169bc240"
   }
 }
