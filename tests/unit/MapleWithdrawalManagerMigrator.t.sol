@@ -20,11 +20,23 @@ contract WithdrawalManagerMigrateTests is TestBase {
         withdrawalManager.migrate(migrator, "");
     }
 
-    function test_migrate_protocolPaused() external {
+    function test_migrate_functionPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");
         withdrawalManager.migrate(migrator, "");
+    }
+
+    function test_migrate_success_empty() external {
+        vm.prank(address(factory));
+        withdrawalManager.migrate(migrator, "");
+
+        ( uint128 nextRequestId_, uint128 lastRequestId_ ) = withdrawalManager.queue();
+
+        assert(nextRequestId_ == 1);
+        assert(lastRequestId_ == 0);
+
+        assertPendingRequestIds(new uint256[](0));
     }
 
     function test_migrate_success_xxx() external {

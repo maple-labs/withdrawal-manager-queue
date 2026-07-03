@@ -114,11 +114,11 @@ contract ViewFunctionsTests is TestBase {
 
         withdrawalManager.__setQueue(5);
 
-        (address ownerLp1_, uint256 sharesLp1_) = withdrawalManager.requests(1);
-        (address ownerLp2_, uint256 sharesLp2_) = withdrawalManager.requests(2);
-        (address ownerLp3_, uint256 sharesLp3_) = withdrawalManager.requests(3);
-        (address ownerLp4_, uint256 sharesLp4_) = withdrawalManager.requests(4);
-        (address ownerLp1_2_, uint256 sharesLp1_2_) = withdrawalManager.requests(5);
+        ( address ownerLp1_,   uint256 sharesLp1_ )   = withdrawalManager.requests(1);
+        ( address ownerLp2_,   uint256 sharesLp2_ )   = withdrawalManager.requests(2);
+        ( address ownerLp3_,   uint256 sharesLp3_ )   = withdrawalManager.requests(3);
+        ( address ownerLp4_,   uint256 sharesLp4_ )   = withdrawalManager.requests(4);
+        ( address ownerLp1_2_, uint256 sharesLp1_2_ ) = withdrawalManager.requests(5);
 
         assertEq(ownerLp1_, lp);
         assertEq(sharesLp1_, assetsDeposited_);
@@ -149,7 +149,11 @@ contract ViewFunctionsTests is TestBase {
 
         withdrawalManager.__setQueue(3);
 
-        (uint256[] memory requestIds_, address[] memory owners_, uint256[] memory shares_) = withdrawalManager.pendingRequestIds(0, 10);
+        (
+            uint256[] memory requestIds_,
+            address[] memory owners_,
+            uint256[] memory shares_
+        ) = withdrawalManager.pendingRequestIds(0, 10);
 
         assertEq(requestIds_.length, 3);
         assertEq(owners_.length,     3);
@@ -166,6 +170,115 @@ contract ViewFunctionsTests is TestBase {
         assertEq(shares_[0], assetsDeposited_);
         assertEq(shares_[1], assetsDeposited_);
         assertEq(shares_[2], assetsDeposited_);
+    }
+
+    function test_pendingRequestIds_paginated_offset() external {
+        address lp1 = makeAddr("lp1");
+        address lp2 = makeAddr("lp2");
+        address lp3 = makeAddr("lp3");
+
+        uint256 assetsDeposited_ = 100e18;
+
+        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
+        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
+        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
+
+        withdrawalManager.__setQueue(3);
+
+        (
+            uint256[] memory requestIds_,
+            address[] memory owners_,
+            uint256[] memory shares_
+        ) = withdrawalManager.pendingRequestIds(1, 10);
+
+        assertEq(requestIds_.length, 2);
+        assertEq(owners_.length,     2);
+        assertEq(shares_.length,     2);
+
+        assertEq(requestIds_[0], 2);
+        assertEq(requestIds_[1], 3);
+
+        assertEq(owners_[0], lp2);
+        assertEq(owners_[1], lp3);
+
+        assertEq(shares_[0], assetsDeposited_);
+        assertEq(shares_[1], assetsDeposited_);
+    }
+
+    function test_pendingRequestIds_paginated_limit() external {
+        address lp1 = makeAddr("lp1");
+        address lp2 = makeAddr("lp2");
+        address lp3 = makeAddr("lp3");
+
+        uint256 assetsDeposited_ = 100e18;
+
+        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
+        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
+        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
+
+        withdrawalManager.__setQueue(3);
+
+        (
+            uint256[] memory requestIds_,
+            address[] memory owners_,
+            uint256[] memory shares_
+        ) = withdrawalManager.pendingRequestIds(1, 1);
+
+        assertEq(requestIds_.length, 1);
+        assertEq(owners_.length,     1);
+        assertEq(shares_.length,     1);
+
+        assertEq(requestIds_[0], 2);
+        assertEq(owners_[0],     lp2);
+        assertEq(shares_[0],     assetsDeposited_);
+    }
+
+    function test_pendingRequestIds_paginated_startBeyondEnd() external {
+        address lp1 = makeAddr("lp1");
+        address lp2 = makeAddr("lp2");
+        address lp3 = makeAddr("lp3");
+
+        uint256 assetsDeposited_ = 100e18;
+
+        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
+        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
+        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
+
+        withdrawalManager.__setQueue(3);
+
+        (
+            uint256[] memory requestIds_,
+            address[] memory owners_,
+            uint256[] memory shares_
+        ) = withdrawalManager.pendingRequestIds(3, 10);
+
+        assertEq(requestIds_.length, 0);
+        assertEq(owners_.length,     0);
+        assertEq(shares_.length,     0);
+    }
+
+    function test_pendingRequestIds_paginated_zeroLimit() external {
+        address lp1 = makeAddr("lp1");
+        address lp2 = makeAddr("lp2");
+        address lp3 = makeAddr("lp3");
+
+        uint256 assetsDeposited_ = 100e18;
+
+        withdrawalManager.__setRequest(1, lp1, assetsDeposited_);
+        withdrawalManager.__setRequest(2, lp2, assetsDeposited_);
+        withdrawalManager.__setRequest(3, lp3, assetsDeposited_);
+
+        withdrawalManager.__setQueue(3);
+
+        (
+            uint256[] memory requestIds_,
+            address[] memory owners_,
+            uint256[] memory shares_
+        ) = withdrawalManager.pendingRequestIds(0, 0);
+
+        assertEq(requestIds_.length, 0);
+        assertEq(owners_.length,     0);
+        assertEq(shares_.length,     0);
     }
 
 }

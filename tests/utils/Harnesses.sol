@@ -11,6 +11,10 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         return _locked;
     }
 
+    function __setLocked(uint256 locked_) external {
+        _locked = locked_;
+    }
+
     function __setManualSharesAvailable(address owner_, uint256 shares_) external {
         manualSharesAvailable[owner_] = shares_;
     }

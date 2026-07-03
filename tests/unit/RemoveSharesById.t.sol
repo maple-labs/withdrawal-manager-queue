@@ -16,11 +16,19 @@ contract RemoveSharesByIdFailureTests is TestBase {
         pool.approve(address(withdrawalManager), mintAmount);
     }
 
-    function test_removeSharesById_protocolPaused() external {
+    function test_removeSharesById_functionPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.prank(lp);
         vm.expectRevert("WM:PAUSED");
+        withdrawalManager.removeSharesById(1, 1);
+    }
+
+    function test_removeSharesById_reentrancy() external {
+        withdrawalManager.__setLocked(2);
+
+        vm.prank(lp);
+        vm.expectRevert("WM:LOCKED");
         withdrawalManager.removeSharesById(1, 1);
     }
 

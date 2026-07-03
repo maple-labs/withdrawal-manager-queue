@@ -15,7 +15,7 @@ contract SetImplementationTests is TestBase {
         newImplementation = address(new MapleWithdrawalManager());
     }
 
-    function test_setImplementation_protocolPaused() external {
+    function test_setImplementation_functionPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");

@@ -23,7 +23,7 @@ contract UpgradeTests is TestBase {
         vm.stopPrank();
     }
 
-    function test_upgrade_protocolPaused() external {
+    function test_upgrade_functionPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");

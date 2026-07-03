@@ -20,13 +20,23 @@ contract ProcessRedemptionsTests is TestBase {
         globals.__setIsInstanceOf(false);
     }
 
-    function test_processRedemptions_protocolPaused() external {
+    function test_processRedemptions_functionPaused() external {
         globals.__setFunctionPaused(true);
 
         uint256[] memory requestIds_ = new uint256[](1);
         requestIds_[0] = 1;
 
         vm.expectRevert("WM:PAUSED");
+        withdrawalManager.processRedemptions(requestIds_);
+    }
+
+    function test_processRedemptions_reentrancy() external {
+        withdrawalManager.__setLocked(2);
+
+        uint256[] memory requestIds_ = new uint256[](1);
+        requestIds_[0] = 1;
+
+        vm.expectRevert("WM:LOCKED");
         withdrawalManager.processRedemptions(requestIds_);
     }
 
@@ -119,7 +129,87 @@ contract ProcessRedemptionsTests is TestBase {
         vm.prank(poolDelegate);
         withdrawalManager.processRedemptions(requestIds_);
 
-        (uint256[] memory requestIdsLp_, uint256[] memory sharesLp_) = withdrawalManager.requestsByOwner(lp);
+        ( uint256[] memory requestIdsLp_, uint256[] memory sharesLp_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(withdrawalManager.totalShares(), 0);
+        assertEq(requestIdsLp_.length,            0);
+        assertEq(sharesLp_.length,                0);
+
+        assertRequest({ requestId: 1, owner: address(0), shares: 0 });
+
+        assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+
+        assertPendingRequestIds(new uint256[](0));
+    }
+
+    function test_processRedemptions_automatic_complete_redeemer() external {
+        globals.__setIsInstanceOf(true);
+
+        withdrawalManager.__setRequest(1, lp, sharesLocked);
+        withdrawalManager.__setQueue(1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), sharesLocked);
+
+        uint256[] memory requestIds_ = new uint256[](1);
+        requestIds_[0] = 1;
+
+        vm.expectEmit();
+        emit RequestProcessed(1, lp, sharesLocked, assetsDeposited);
+
+        vm.expectEmit();
+        emit RequestRemoved(1);
+
+        vm.prank(redeemer);
+        withdrawalManager.processRedemptions(requestIds_);
+
+        ( uint256[] memory requestIdsLp_, uint256[] memory sharesLp_ ) = withdrawalManager.requestsByOwner(lp);
+
+        assertEq(withdrawalManager.totalShares(), 0);
+        assertEq(requestIdsLp_.length,            0);
+        assertEq(sharesLp_.length,                0);
+
+        assertRequest({ requestId: 1, owner: address(0), shares: 0 });
+
+        assertQueue({ nextRequestId: 2, lastRequestId: 1 });
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), 0);
+
+        assertPendingRequestIds(new uint256[](0));
+    }
+
+    function test_processRedemptions_automatic_complete_operationalAdmin() external {
+        withdrawalManager.__setRequest(1, lp, sharesLocked);
+        withdrawalManager.__setQueue(1);
+        withdrawalManager.__setUserRequestCount(lp, 1, sharesLocked);
+
+        uint256[] memory pendingRequestIds_ = new uint256[](1);
+        pendingRequestIds_[0] = 1;
+
+        assertPendingRequestIds(pendingRequestIds_);
+
+        assertEq(withdrawalManager.userEscrowedShares(lp), sharesLocked);
+
+        uint256[] memory requestIds_ = new uint256[](1);
+        requestIds_[0] = 1;
+
+        vm.expectEmit();
+        emit RequestProcessed(1, lp, sharesLocked, assetsDeposited);
+
+        vm.expectEmit();
+        emit RequestRemoved(1);
+
+        vm.prank(operationalAdmin);
+        withdrawalManager.processRedemptions(requestIds_);
+
+        ( uint256[] memory requestIdsLp_, uint256[] memory sharesLp_ ) = withdrawalManager.requestsByOwner(lp);
 
         assertEq(withdrawalManager.totalShares(), 0);
         assertEq(requestIdsLp_.length,            0);
