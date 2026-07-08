@@ -146,14 +146,6 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
     function governor() external view returns (address governor);
 
     /**
-     *  @dev    Returns if a user is able to withdraw. Required for compatibility with pool managers.
-     *          NOTE: Always returns true to fulfil interface requirements.
-     *  @param  owner          The account to check if it's in withdraw window.
-     *  @return isInExitWindow True if the account is in the withdraw window.
-     */
-    function isInExitWindow(address owner) external view returns (bool isInExitWindow);
-
-    /**
      *  @dev    Returns the maximum amount of shares that can be redeemed by an account.
      *          NOTE: Only manual withdrawal accounts have shares available to redeem.
      *  @param  owner               The address to check the maximum redeemable shares for.

@@ -21,10 +21,6 @@ contract ViewFunctionsTests is TestBase {
         assertEq(withdrawalManager.securityAdmin(), securityAdmin);
     }
 
-    function testFuzz_isInExitWindow(address account_) external {
-        assertTrue(withdrawalManager.isInExitWindow(account_));
-    }
-
     function test_maxRedeem_noSharesAvailable(address account_) external {
         assertEq(withdrawalManager.maxRedeem(account_), 0);
     }

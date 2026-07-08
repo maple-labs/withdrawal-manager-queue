@@ -430,12 +430,6 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         implementation_ = _implementation();
     }
 
-    function isInExitWindow(address owner_) external pure override returns (bool isInExitWindow_) {
-        owner_;  // Silence warning
-
-        isInExitWindow_ = true;
-    }
-
     function maxRedeem(address owner_) external view override returns (uint256 maxRedeemableShares_) {
         maxRedeemableShares_ = manualSharesAvailable[owner_];
     }
