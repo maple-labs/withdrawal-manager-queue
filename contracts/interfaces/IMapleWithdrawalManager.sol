@@ -117,6 +117,7 @@ interface IMapleWithdrawalManager is IMapleWithdrawalManagerStorage, IMapleProxi
 
     /**
      *  @dev    Remove shares from a specific withdrawal request.
+     *          Can only be called by the owner of the request, and only if they have permission in the pool permission manager.
      *  @param  requestId       Identifier of the withdrawal request that is being updated.
      *  @param  sharesToRemove  Amount of shares to remove from the request.
      *  @return sharesReturned  Amount of shares that were returned.

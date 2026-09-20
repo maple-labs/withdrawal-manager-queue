@@ -7,8 +7,8 @@ import { MockERC20 }                 from "../../modules/erc20/contracts/test/mo
 import { MapleWithdrawalManagerFactory }     from "../../contracts/proxy/MapleWithdrawalManagerFactory.sol";
 import { MapleWithdrawalManagerInitializer } from "../../contracts/proxy/MapleWithdrawalManagerInitializer.sol";
 
-import { MapleWithdrawalManagerHarness }                       from "./Harnesses.sol";
-import { MockFactory, MockGlobals, MockPool, MockPoolManager } from "./Mocks.sol";
+import { MapleWithdrawalManagerHarness }                                                  from "./Harnesses.sol";
+import { MockFactory, MockGlobals, MockPool, MockPoolManager, MockPoolPermissionManager } from "./Mocks.sol";
 
 import { SortedLinkedListHarness } from "./Harnesses.sol";
 
@@ -26,11 +26,12 @@ contract TestBase is Test {
     address internal pm;
     address internal wm;
 
-    MockERC20       internal asset;
-    MockGlobals     internal globals;
-    MockFactory     internal poolManagerFactory;
-    MockPool        internal pool;
-    MockPoolManager internal poolManager;
+    MockERC20                 internal asset;
+    MockGlobals               internal globals;
+    MockFactory               internal poolManagerFactory;
+    MockPool                  internal pool;
+    MockPoolManager           internal poolManager;
+    MockPoolPermissionManager internal poolPermissionManager;
 
     MapleWithdrawalManagerFactory internal factory;
     MapleWithdrawalManagerHarness internal withdrawalManager;
@@ -44,17 +45,21 @@ contract TestBase is Test {
 
     function setUp() public virtual {
         // Create all mocks.
-        asset              = new MockERC20("Wrapped Ether", "WETH", 18);
-        globals            = new MockGlobals(address(governor));
-        pool               = new MockPool("Maple Pool", "MP-WETH", 18, address(asset), poolDelegate);
-        poolManager        = new MockPoolManager(address(pool), poolDelegate, address(globals));
-        poolManagerFactory = new MockFactory();
+        asset                 = new MockERC20("Wrapped Ether", "WETH", 18);
+        globals               = new MockGlobals(address(governor));
+        pool                  = new MockPool("Maple Pool", "MP-WETH", 18, address(asset), poolDelegate);
+        poolManager           = new MockPoolManager(address(pool), poolDelegate, address(globals));
+        poolManagerFactory    = new MockFactory();
+        poolPermissionManager = new MockPoolPermissionManager();
 
         pool.__setPoolManager(address(poolManager));
 
         poolManager.__setFactory(address(poolManagerFactory));
+        poolManager.__setPoolPermissionManager(address(poolPermissionManager));
 
         poolManagerFactory.__setIsInstance(true);
+
+        poolPermissionManager.__setHasPermission(true);
 
         globals.__setCanDeploy(true);
         globals.__setIsInstanceOf(true);
