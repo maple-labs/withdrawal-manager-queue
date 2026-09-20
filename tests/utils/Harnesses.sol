@@ -11,10 +11,6 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
         return _locked;
     }
 
-    function __setLocked(uint256 locked_) external {
-        _locked = locked_;
-    }
-
     function __setManualSharesAvailable(address owner_, uint256 shares_) external {
         manualSharesAvailable[owner_] = shares_;
     }
@@ -25,36 +21,28 @@ contract MapleWithdrawalManagerHarness is MapleWithdrawalManager {
 
     function __setLastRequest(address owner_, uint256 requestId_) external {
         SortedLinkedList.push(_userRequests[owner_], _toUint128(requestId_));
-        _queue.lastRequestId = _toUint128(requestId_);
+        queue.lastRequestId = _toUint128(requestId_);
     }
 
-    function __setQueue(uint256 lastRequestId_) external {
-        _queue.lastRequestId = _toUint128(lastRequestId_);
+    function __setQueue(uint256 nextRequestId_, uint256 lastRequestId_) external {
+        queue.nextRequestId = _toUint128(nextRequestId_);
+        queue.lastRequestId = _toUint128(lastRequestId_);
     }
 
     function __setRequestLegacy(uint128 requestId_, address owner_, uint256 shares_) external {
-        // Used to setup the withdrawal manager storage in the v2.0.0-rc.2/rc.3 format.
-        // This function is only used to unit test the migrator so we can seed state without populating `_pendingRequestIds`.
-        _queue.lastRequestId        = requestId_;
-        _queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
-
-        if (owner_ != address(0)) {
-            userEscrowedShares[owner_] += shares_;
-
-            SortedLinkedList.push(_userRequests[owner_], requestId_);
-        }
+        // Used to setup the withdrawal manager storage in the old format.
+        // This function is only used to unit test the migrator so we can setup wm storage without pushing to the sorted array.
+        queue.lastRequestId        = requestId_;
+        queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
 
         __deprecated_requestIds[owner_] = requestId_;
     }
 
     function __setRequest(uint128 requestId_, address owner_, uint256 shares_) external {
-        _queue.lastRequestId        = requestId_;
-        _queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
+        queue.lastRequestId        = requestId_;
+        queue.requests[requestId_] = WithdrawalRequest(owner_, shares_);
 
-        if (owner_ != address(0)) {
-            SortedLinkedList.push(_userRequests[owner_], _toUint128(requestId_));
-            SortedLinkedList.push(_pendingRequestIds,    _toUint128(requestId_));
-        }
+        SortedLinkedList.push(_userRequests[owner_], _toUint128(requestId_));
     }
 
     function __setTotalShares(uint256 totalShares_) external {
@@ -97,10 +85,6 @@ contract SortedLinkedListHarness {
 
     function getAllValues() external view returns (uint128[] memory) {
         return SortedLinkedList.getAllValues(list);
-    }
-
-    function getValues(uint256 start_, uint256 limit_) external view returns (uint128[] memory) {
-        return SortedLinkedList.getValues(list, start_, limit_);
     }
 
     function getLast() external view returns (uint128) {

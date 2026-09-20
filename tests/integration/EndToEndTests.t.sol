@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.7;
 
-import { TestBase } from "../utils/TestBase.sol";
+import { console, TestBase } from "../utils/TestBase.sol";
 
 contract EndToEndTests is TestBase {
 
@@ -14,7 +14,7 @@ contract EndToEndTests is TestBase {
         super.setUp();
     }
 
-    function test_e2e_cherrypick_manual_and_auto_flow() external {
+    function test_e2e_fullFlow() external {
         // Start with 3 users
         address lp1 = makeAddr("lp1");  // Automatic
         address lp2 = makeAddr("lp2");  // Manual
@@ -72,54 +72,68 @@ contract EndToEndTests is TestBase {
 
         vm.stopPrank();
 
-        asset.mint(address(pool), totalInitialShares);
-        poolManager.__setTotalAssets(totalInitialShares);
-
         assertEq(withdrawalManager.totalShares(),            totalInitialShares);
         assertEq(pool.balanceOf(address(withdrawalManager)), totalInitialShares);
 
-        // Pool Delegate processes request 3 first (cherry-picked)
-        uint256[] memory requestIds_ = new uint256[](1);
-        requestIds_[0] = 3;
-
+        // Pool Delegate process first request partially
         vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
+        withdrawalManager.processRedemptions(shares1 / 2);
 
+        assertEq(withdrawalManager.totalShares(), totalInitialShares - shares1 / 2);
+
+        // LP1 is still in the queue, but request has been updated
         assertQueue({ nextRequestId: 1, lastRequestId: 3 });
-        assertRequest({ requestId: 3, shares: 0, owner: address(0) });
-        assertEq(withdrawalManager.totalShares(), shares1 + shares2);
+        assertRequest({ requestId: 1, shares: shares1 / 2, owner: lp1 });
 
-        // Pool Delegate processes remaining requests
-        requestIds_ = new uint256[](2);
-        requestIds_[0] = 1;
-        requestIds_[1] = 2;
+        ( requestId_, ) = getLastRequestByOwner(lp1);
 
+        assertEq(requestId_, 1);
+
+        // Pool Delegate process rest of request 1 + half of request 2
         vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
+        withdrawalManager.processRedemptions(shares1 / 2 + shares2 / 2);
+
+        // Shares of lp2 remain locked in wm
+        assertEq(withdrawalManager.totalShares(), totalInitialShares - shares1);
+
+        ( requestId_, ) = getLastRequestByOwner(lp1);
+
+        // Lp1 is removed from queue, although the `request` data structure remains populated.
+        assertQueue({ nextRequestId: 2, lastRequestId: 3 });
+        assertRequest({ requestId: 1, shares: 0, owner: address(0) });
+        assertEq(requestId_, 0);
+
+        // Lp2 is still on the queue, and had it's manual shares incremented.
+        assertRequest({ requestId: 2, shares: shares2 / 2, owner: lp2 });
+
+        ( requestId_, ) = getLastRequestByOwner(lp2);
+
+        assertEq(requestId_,                                   2);
+        assertEq(withdrawalManager.manualSharesAvailable(lp2), shares2 / 2);
+
+        vm.prank(pm);
+        withdrawalManager.processExit(shares2 / 2, lp2);
+
+        assertEq(withdrawalManager.manualSharesAvailable(lp2), 0);
+
+        // PD processes remaining shares
+        vm.prank(poolDelegate);
+        withdrawalManager.processRedemptions(shares2 / 2 + shares3);
 
         assertQueue({ nextRequestId: 4, lastRequestId: 3 });
 
-        // Manual shares remain available until exit
-        assertEq(withdrawalManager.totalShares(),              shares2);
-        assertEq(withdrawalManager.manualSharesAvailable(lp2), shares2);
+        // Only half of manual shares are remaining.
+        assertEq(withdrawalManager.totalShares(), shares2 / 2);
 
-        assertRequest({ requestId: 1, shares: 0, owner: address(0) });
+        assertEq(withdrawalManager.manualSharesAvailable(lp2), shares2 / 2);
+
+        // Assert requests
         assertRequest({ requestId: 2, shares: 0, owner: address(0) });
-
-        vm.prank(pm);
-        withdrawalManager.processExit(shares2, lp2);
-
-        assertEq(withdrawalManager.totalShares(),              0);
-        assertEq(withdrawalManager.manualSharesAvailable(lp2), 0);
+        assertRequest({ requestId: 3, shares: 0, owner: address(0) });
     }
 
-    function testFuzz_cherrypick_all_requests_manual_shares_retained(
-        address[10] memory lps, 
-        bool[10] memory isManual, 
-        uint256[10] memory shares
-    ) external {
+    function testFuzz_fullFLow_fixedExchangeRate(address[10] memory lps, bool[10] memory isManual, uint256[10] memory shares) external {
         uint256 totalShares;
-        uint256 manualShares;
         uint256 inQueue;
         uint256 requestId_;
 
@@ -144,7 +158,6 @@ contract EndToEndTests is TestBase {
                     vm.prank(poolDelegate);
                     withdrawalManager.setManualWithdrawal(lps[i], true);
                     manualLps[lps[i]] = true;
-                    manualShares     += sharesRequested;
                 }
 
                 vm.prank(pm);
@@ -152,359 +165,52 @@ contract EndToEndTests is TestBase {
             }
         }
 
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
         // Assert queue state
         assertQueue({ nextRequestId: 1, lastRequestId: inQueue });
 
         assertEq(withdrawalManager.totalShares(), totalShares);
 
-        // Process all pending requests
-        uint256[] memory requestIds_ = new uint256[](inQueue);
-
-        for (uint256 i = 0; i < inQueue; i++) {
-            requestIds_[i] = i + 1;
-        }
+        // Determine a random amount of shares to process
+        uint256 sharesToProcess;
+        sharesToProcess = bound(sharesToProcess, 100, totalShares);
 
         vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
+        withdrawalManager.processRedemptions(sharesToProcess);
 
-        // Check the queue is fully processed
-        assertQueue({ nextRequestId: inQueue + 1, lastRequestId: inQueue });
+        // To avoid doing the same iteration as the function `processRedemptions`, fetch the queue state, then check it's integrity.
+        ( uint256 nextRequestId_, uint256 lastRequestId_ ) = withdrawalManager.queue();
 
-        // Verify processed requests and manual shares
-        for (uint256 i = 1; i <= inQueue; i++) {
+        uint256 sharesProcessed;
+
+        // First, check that the requests processes are correct
+        for (uint256 i = 1; i < nextRequestId_; i++) {
             address lp = lpsRequest[i];
 
             assertRequest({ requestId: i, shares: 0, owner: address(0) });
 
-            if (manualLps[lp]) {
-                assertEq(withdrawalManager.manualSharesAvailable(lp), lpShares[lp]);
-            } else {
-                assertEq(withdrawalManager.manualSharesAvailable(lp), 0);
-            }
+            // If the request is manual, then it should have manual shares available.
+            if (manualLps[lp]) assertEq(withdrawalManager.manualSharesAvailable(lp), lpShares[lp]);
+
+            sharesProcessed += lpShares[lp];
         }
 
-        assertEq(withdrawalManager.totalShares(), manualShares);
-    }
+        // Check the possible partial request that is first on the queue.
+        address firstLp = lpsRequest[nextRequestId_];
 
-    function test_e2e_cherrypick_duplicate_ids_revert_low_liquidity() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
+        assertRequest({ requestId: nextRequestId_, shares: lpShares[firstLp] - (sharesToProcess - sharesProcessed), owner: firstLp });
 
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-        uint256 shares3 = 300e18;
+        // If the LP is manual, then it should have shares to withdraw.
+        if (manualLps[firstLp]) {
+            assertEq(withdrawalManager.manualSharesAvailable(firstLp), sharesToProcess - sharesProcessed);
+        }
 
-        uint256 totalShares = shares1 + shares2 + shares3;
+        // Finally, check that all subsequent requests are still on the queue.
+        for (uint256 i = nextRequestId_ + 1; i <= lastRequestId_; i++) {
+            address lp = lpsRequest[i];
 
-        pool.mint(pm, totalShares);
+            assertRequest({ requestId: i, shares: lpShares[lp], owner: lp });
+        }
 
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        withdrawalManager.addShares(shares3, lp3);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
-        vm.prank(poolDelegate);
-        withdrawalManager.removeRequest(lp2, _singleElementArray(2));
-
-        uint256[] memory requestIds_ = new uint256[](4);
-        requestIds_[0] = 3;
-        requestIds_[1] = 3;
-        requestIds_[2] = 2;
-        requestIds_[3] = 1;
-
-        vm.expectRevert("WM:PR:LOW_LIQUIDITY");
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-    }
-
-    function test_e2e_cherrypick_duplicate_ids_sufficient_liquidity_process_once() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
-        address lp4 = makeAddr("lp4");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-        uint256 shares3 = 300e18;
-        uint256 shares4 = 400e18;
-
-        uint256 totalShares = shares1 + shares2 + shares3 + shares4;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        withdrawalManager.addShares(shares3, lp3);
-        withdrawalManager.addShares(shares4, lp4);
-        vm.stopPrank();
-
-        asset.mint(address(pool), 900e18);
-        poolManager.__setTotalAssets(totalShares);
-
-        uint256[] memory requestIds_ = new uint256[](4);
-        requestIds_[0] = 3;
-        requestIds_[1] = 3;
-        requestIds_[2] = 2;
-        requestIds_[3] = 1;
-
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares1, lp1, address(withdrawalManager)),
-            1
-        );
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares2, lp2, address(withdrawalManager)),
-            1
-        );
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares3, lp3, address(withdrawalManager)),
-            1
-        );
-
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-
-        assertRequest({ requestId: 1, shares: 0,       owner: address(0) });
-        assertRequest({ requestId: 2, shares: 0,       owner: address(0) });
-        assertRequest({ requestId: 3, shares: 0,       owner: address(0) });
-        assertRequest({ requestId: 4, shares: shares4, owner: lp4 });
-
-        assertQueue({ nextRequestId: 4, lastRequestId: 4 });
-
-        assertEq(withdrawalManager.totalShares(), shares4);
-    }
-
-    function test_e2e_remove_request_then_process_including_removed() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-        uint256 shares3 = 300e18;
-
-        uint256 totalShares = shares1 + shares2 + shares3;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        withdrawalManager.addShares(shares3, lp3);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
-        vm.prank(poolDelegate);
-        withdrawalManager.removeRequest(lp2, _singleElementArray(2));
-
-        uint256[] memory requestIds_ = new uint256[](3);
-        requestIds_[0] = 1;
-        requestIds_[1] = 2;
-        requestIds_[2] = 3;
-
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares1, lp1, address(withdrawalManager)),
-            1
-        );
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares3, lp3, address(withdrawalManager)),
-            1
-        );
-
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-
-        assertRequest({ requestId: 1, shares: 0, owner: address(0) });
-        assertRequest({ requestId: 2, shares: 0, owner: address(0) });
-        assertRequest({ requestId: 3, shares: 0, owner: address(0) });
-
-        assertQueue({ nextRequestId: 4, lastRequestId: 3 });
-
-        assertEq(withdrawalManager.totalShares(), 0);
-    }
-
-    function test_e2e_remove_request_then_process_remaining_only() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-        uint256 shares3 = 300e18;
-
-        uint256 totalShares = shares1 + shares2 + shares3;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        withdrawalManager.addShares(shares3, lp3);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
-        vm.prank(poolDelegate);
-        withdrawalManager.removeRequest(lp2, _singleElementArray(2));
-
-        uint256[] memory requestIds_ = new uint256[](2);
-        requestIds_[0] = 1;
-        requestIds_[1] = 3;
-
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares1, lp1, address(withdrawalManager)),
-            1
-        );
-        vm.expectCall(
-            address(pool),
-            abi.encodeWithSignature("redeem(uint256,address,address)", shares3, lp3, address(withdrawalManager)),
-            1
-        );
-
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-
-        assertRequest({ requestId: 1, shares: 0, owner: address(0) });
-        assertRequest({ requestId: 2, shares: 0, owner: address(0) });
-        assertRequest({ requestId: 3, shares: 0, owner: address(0) });
-
-        assertQueue({ nextRequestId: 4, lastRequestId: 3 });
-
-        assertEq(withdrawalManager.totalShares(), 0);
-    }
-
-    function test_e2e_cherrypick_reverts_on_low_liquidity() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-
-        uint256 totalShares = shares1 + shares2;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares - 1);
-        poolManager.__setTotalAssets(totalShares);
-
-        uint256[] memory requestIds_ = new uint256[](2);
-        requestIds_[0] = 1;
-        requestIds_[1] = 2;
-
-        vm.prank(poolDelegate);
-        vm.expectRevert("WM:PR:LOW_LIQUIDITY");
-        withdrawalManager.processRedemptions(requestIds_);
-    }
-
-    function test_e2e_cherrypick_manual_and_auto_mixed_order() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-        address lp3 = makeAddr("lp3");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-        uint256 shares3 = 300e18;
-
-        uint256 totalShares = shares1 + shares2 + shares3;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.prank(poolDelegate);
-        withdrawalManager.setManualWithdrawal(lp2, true);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        withdrawalManager.addShares(shares3, lp3);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
-        uint256[] memory requestIds_ = new uint256[](2);
-        requestIds_[0] = 3;
-        requestIds_[1] = 2;
-
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-
-        assertRequest({ requestId: 2, shares: 0, owner: address(0) });
-        assertRequest({ requestId: 3, shares: 0, owner: address(0) });
-
-        assertEq(withdrawalManager.manualSharesAvailable(lp2), shares2);
-        assertEq(withdrawalManager.totalShares(), shares1 + shares2);
-    }
-
-    function test_e2e_cherrypick_empty_queue_next_request_id() external {
-        address lp1 = makeAddr("lp1");
-        address lp2 = makeAddr("lp2");
-
-        uint256 shares1 = 100e18;
-        uint256 shares2 = 200e18;
-
-        uint256 totalShares = shares1 + shares2;
-
-        pool.mint(pm, totalShares);
-
-        vm.prank(pm);
-        pool.approve(address(withdrawalManager), totalShares);
-
-        vm.startPrank(pm);
-        withdrawalManager.addShares(shares1, lp1);
-        withdrawalManager.addShares(shares2, lp2);
-        vm.stopPrank();
-
-        asset.mint(address(pool), totalShares);
-        poolManager.__setTotalAssets(totalShares);
-
-        uint256[] memory requestIds_ = new uint256[](2);
-        requestIds_[0] = 1;
-        requestIds_[1] = 2;
-
-        vm.prank(poolDelegate);
-        withdrawalManager.processRedemptions(requestIds_);
-
-        assertQueue({ nextRequestId: 3, lastRequestId: 2 });
     }
 
     function _addSharesToPoolManager(uint256 shares_) internal {
@@ -512,11 +218,6 @@ contract EndToEndTests is TestBase {
 
         vm.prank(pm);
         pool.approve(address(withdrawalManager), shares_);
-    }
-
-    function _singleElementArray(uint256 value_) internal pure returns (uint256[] memory values_) {
-        values_ = new uint256[](1);
-        values_[0] = value_;
     }
 
 }

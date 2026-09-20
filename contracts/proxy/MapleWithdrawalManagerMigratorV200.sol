@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.28;
+pragma solidity ^0.8.7;
 
 import { MapleProxiedInternals } from "../../modules/maple-proxy-factory/contracts/MapleProxiedInternals.sol";
 
@@ -7,20 +7,21 @@ import { SortedLinkedList } from "../utils/SortedLinkedList.sol";
 
 import { MapleWithdrawalManagerStorage } from "./MapleWithdrawalManagerStorage.sol";
 
-contract MapleWithdrawalManagerMigratorV300 is MapleProxiedInternals, MapleWithdrawalManagerStorage {
+contract MapleWithdrawalManagerMigratorV200 is MapleProxiedInternals, MapleWithdrawalManagerStorage {
 
     fallback() external {
-        uint128 nextRequestId_ = _queue.__deprecated_nextRequestId;
-        uint128 lastRequestId_ = _queue.lastRequestId;
+        uint128 nextRequestId_ = queue.nextRequestId;
+        uint128 lastRequestId_ = queue.lastRequestId;
 
         for (uint128 i = nextRequestId_; i <= lastRequestId_; ++i) {
-            WithdrawalRequest memory request_ = _queue.requests[i];
+            WithdrawalRequest memory request_ = queue.requests[i];
+
             if (request_.owner == address(0)) continue;
 
-            SortedLinkedList.push(_pendingRequestIds, i);
-        }
+            userEscrowedShares[request_.owner] += request_.shares;
 
-        _queue.__deprecated_nextRequestId = 0;
+            SortedLinkedList.push(_userRequests[request_.owner], i);
+        }
     }
 
 }

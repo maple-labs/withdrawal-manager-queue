@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.7;
 
 interface IMapleWithdrawalManagerStorage {
 
@@ -42,4 +42,11 @@ interface IMapleWithdrawalManagerStorage {
      */
     function userEscrowedShares(address owner) external view returns (uint256 escrowedShares);
 
+    /**
+     *  @dev    Returns the first and last withdrawal requests pending redemption.
+     *  @return nextRequestId Identifier of the next withdrawal request that will be processed.
+     *  @return lastRequestId Identifier of the last created withdrawal request.
+     */
+    function queue() external view returns (uint128 nextRequestId, uint128 lastRequestId);
+    
 }

@@ -16,19 +16,11 @@ contract RemoveSharesByIdFailureTests is TestBase {
         pool.approve(address(withdrawalManager), mintAmount);
     }
 
-    function test_removeSharesById_functionPaused() external {
+    function test_removeSharesById_protocolPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.prank(lp);
         vm.expectRevert("WM:PAUSED");
-        withdrawalManager.removeSharesById(1, 1);
-    }
-
-    function test_removeSharesById_reentrancy() external {
-        withdrawalManager.__setLocked(2);
-
-        vm.prank(lp);
-        vm.expectRevert("WM:LOCKED");
         withdrawalManager.removeSharesById(1, 1);
     }
 
@@ -141,11 +133,6 @@ contract RemoveSharesByIdSuccessTests is TestBase {
         vm.prank(pm);
         uint256 requestId = withdrawalManager.addShares(1, lp);
 
-        uint256[] memory pendingRequestIds_ = new uint256[](1);
-        pendingRequestIds_[0] = requestId;
-
-        assertPendingRequestIds(pendingRequestIds_);
-
         ( address ownerBefore, uint256 sharesBefore ) = withdrawalManager.requests(requestId);
 
         assertEq(ownerBefore,  lp);
@@ -180,18 +167,11 @@ contract RemoveSharesByIdSuccessTests is TestBase {
         assertEq(sharesPerRequestAfter.length, 0);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 0);
-
-        assertPendingRequestIds(new uint256[](0));
     }
 
     function test_removeSharesById_decrease() external {
         vm.prank(pm);
         uint256 requestId = withdrawalManager.addShares(2, lp);
-
-        uint256[] memory pendingRequestIds_ = new uint256[](1);
-        pendingRequestIds_[0] = requestId;
-
-        assertPendingRequestIds(pendingRequestIds_);
 
         ( address ownerBefore, uint256 sharesBefore ) = withdrawalManager.requests(requestId);
 
@@ -229,8 +209,6 @@ contract RemoveSharesByIdSuccessTests is TestBase {
         assertEq(sharesPerRequestAfter[0],     1);
 
         assertEq(withdrawalManager.userEscrowedShares(lp), 1);
-
-        assertPendingRequestIds(pendingRequestIds_);
     }
 
     function test_removeSharesById_multipleLPsWithMultipleRequests() external {
@@ -261,14 +239,6 @@ contract RemoveSharesByIdSuccessTests is TestBase {
         withdrawalManager.addShares(requestAmount2, lp2);
 
         vm.stopPrank();
-
-        uint256[] memory pendingRequestIds_ = new uint256[](4);
-        pendingRequestIds_[0] = 1;
-        pendingRequestIds_[1] = 2;
-        pendingRequestIds_[2] = 3;
-        pendingRequestIds_[3] = 4;
-
-        assertPendingRequestIds(pendingRequestIds_);
 
         assertEq(withdrawalManager.userEscrowedShares(lp),  requestAmount1 + requestAmount2);
         assertEq(withdrawalManager.userEscrowedShares(lp2), requestAmount1 + requestAmount2);
@@ -363,13 +333,6 @@ contract RemoveSharesByIdSuccessTests is TestBase {
         assertEq(sharesLp1After[1], requestAmount2);
 
         assertEq(sharesLp2After[0], requestAmount2);
-
-        pendingRequestIds_ = new uint256[](3);
-        pendingRequestIds_[0] = 1;
-        pendingRequestIds_[1] = 2;
-        pendingRequestIds_[2] = 4;
-
-        assertPendingRequestIds(pendingRequestIds_);
     }
 
 }

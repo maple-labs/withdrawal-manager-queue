@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.28;
+pragma solidity ^0.8.7;
 
 library SortedLinkedList {
 
@@ -107,39 +107,6 @@ library SortedLinkedList {
         for (uint256 i = 0; i < size_; i++) {
             values_[i] = current_;
             current_   = list.nodes[current_].next;
-        }
-    }
-
-    /**
-     * @dev    Gets values from the list with pagination.
-     * @param  list    The list to get the values from.
-     * @param  start_  Number of elements to skip from the head.
-     * @param  limit_  Maximum number of elements to return.
-     * @return values_ Paginated values from the list.
-     */
-    function getValues(List storage list, uint256 start_, uint256 limit_) internal view returns (uint128[] memory values_) {
-        uint256 total_ = list.size;
-
-        if (start_ >= total_ || limit_ == 0) return new uint128[](0);
-
-        uint256 available_ = total_ - start_;
-        uint256 size_      = limit_ < available_ ? limit_ : available_;
-
-        values_ = new uint128[](size_);
-
-        uint128 current_ = list.head;
-        uint256 skipped_;
-        uint256 index_;
-
-        while (current_ != 0 && index_ < size_) {
-            if (skipped_ < start_) {
-                ++skipped_;
-            } else {
-                values_[index_] = current_;
-                ++index_;
-            }
-
-            current_ = list.nodes[current_].next;
         }
     }
 

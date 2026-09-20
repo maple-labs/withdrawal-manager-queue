@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.28;
+pragma solidity ^0.8.7;
 
 import { MapleProxiedInternals } from "../../modules/maple-proxy-factory/contracts/MapleProxiedInternals.sol";
 
@@ -30,6 +30,8 @@ contract MapleWithdrawalManagerInitializer is IMapleWithdrawalManagerInitializer
 
         pool        = pool_;
         poolManager = poolManager_;
+
+        queue.nextRequestId = 1;  // Initialize queue with index 1
 
         emit Initialized(pool_, poolManager_);
     }

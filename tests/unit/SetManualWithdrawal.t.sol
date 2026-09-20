@@ -5,7 +5,7 @@ import { TestBase } from "../utils/TestBase.sol";
 
 contract SetManualWithdrawalTests is TestBase {
 
-    function test_setManualWithdrawal_functionPaused() external {
+    function test_setManualWithdrawal_protocolPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");
@@ -30,18 +30,6 @@ contract SetManualWithdrawalTests is TestBase {
         emit ManualWithdrawalSet(lp, true);
 
         vm.prank(poolDelegate);
-        withdrawalManager.setManualWithdrawal(lp, true);
-
-        assertEq(withdrawalManager.isManualWithdrawal(lp), true);
-    }
-
-    function test_setManualWithdrawal_success_operationalAdmin() external {
-        assertEq(withdrawalManager.isManualWithdrawal(lp), false);
-
-        vm.expectEmit();
-        emit ManualWithdrawalSet(lp, true);
-
-        vm.prank(operationalAdmin);
         withdrawalManager.setManualWithdrawal(lp, true);
 
         assertEq(withdrawalManager.isManualWithdrawal(lp), true);

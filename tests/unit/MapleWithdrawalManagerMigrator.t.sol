@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.7;
 
-import { MapleWithdrawalManagerMigratorV300 } from "../../contracts/proxy/MapleWithdrawalManagerMigratorV300.sol";
-
-import { TestBase } from "../utils/TestBase.sol";
+import { MapleWithdrawalManagerMigratorV200 } from "../../contracts/proxy/MapleWithdrawalManagerMigratorV200.sol";
+import { TestBase }                      from "../utils/TestBase.sol";
 
 contract WithdrawalManagerMigrateTests is TestBase {
 
@@ -12,7 +11,7 @@ contract WithdrawalManagerMigrateTests is TestBase {
     function setUp() public override {
         super.setUp();
 
-        migrator = address(new MapleWithdrawalManagerMigratorV300());
+        migrator = address(new MapleWithdrawalManagerMigratorV200());
     }
 
     function test_migrate_notFactory() external {
@@ -20,23 +19,11 @@ contract WithdrawalManagerMigrateTests is TestBase {
         withdrawalManager.migrate(migrator, "");
     }
 
-    function test_migrate_functionPaused() external {
+    function test_migrate_protocolPaused() external {
         globals.__setFunctionPaused(true);
 
         vm.expectRevert("WM:PAUSED");
         withdrawalManager.migrate(migrator, "");
-    }
-
-    function test_migrate_success_empty() external {
-        vm.prank(address(factory));
-        withdrawalManager.migrate(migrator, "");
-
-        ( uint128 nextRequestId_, uint128 lastRequestId_ ) = withdrawalManager.queue();
-
-        assert(nextRequestId_ == 1);
-        assert(lastRequestId_ == 0);
-
-        assertPendingRequestIds(new uint256[](0));
     }
 
     function test_migrate_success_xxx() external {
@@ -44,6 +31,8 @@ contract WithdrawalManagerMigrateTests is TestBase {
         withdrawalManager.__setRequestLegacy(12, address(0x01), 2);
         withdrawalManager.__setRequestLegacy(13, address(0x02), 4);
         withdrawalManager.__setRequestLegacy(15, address(0x03), 5);
+
+        withdrawalManager.__setQueue(10, 15);
 
         vm.prank(address(factory));
         withdrawalManager.migrate(migrator,"");
@@ -56,15 +45,6 @@ contract WithdrawalManagerMigrateTests is TestBase {
         assertEq(withdrawalManager.userEscrowedShares(address(0x01)), 3);
         assertEq(withdrawalManager.userEscrowedShares(address(0x02)), 4);
         assertEq(withdrawalManager.userEscrowedShares(address(0x03)), 5);
-
-        uint256[] memory pendingRequestIds_ = new uint256[](4);
-
-        pendingRequestIds_[0] = 10;
-        pendingRequestIds_[1] = 12;
-        pendingRequestIds_[2] = 13;
-        pendingRequestIds_[3] = 15;
-
-        assertPendingRequestIds(pendingRequestIds_);
 
         address owner_;
         uint256 shares_;
