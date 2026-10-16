@@ -60,8 +60,16 @@ interface IPoolManagerLike {
 
     function poolDelegate() external view returns (address poolDelegate_);
 
+    function poolPermissionManager() external view returns (address poolPermissionManager_);
+
     function totalAssets() external view returns (uint256 totalAssets_);
 
     function unrealizedLosses() external view returns (uint256 unrealizedLosses_);
+
+}
+
+interface IPoolPermissionManagerLike {
+
+    function hasPermission(address poolManager_, address lender_, bytes32 functionId_) external view returns (bool hasPermission_);
 
 }

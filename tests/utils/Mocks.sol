@@ -124,6 +124,7 @@ contract MockPoolManager {
     address public globals;
     address public pool;
     address public poolDelegate;
+    address public poolPermissionManager;
 
     uint256 public totalAssets;
     uint256 public unrealizedLosses;
@@ -138,8 +139,26 @@ contract MockPoolManager {
         factory = factory_;
     }
 
+    function __setPoolPermissionManager(address poolPermissionManager_) external {
+        poolPermissionManager = poolPermissionManager_;
+    }
+
     function __setTotalAssets(uint256 totalAssets_) external  {
         totalAssets = totalAssets_;
+    }
+
+}
+
+contract MockPoolPermissionManager {
+
+    bool _hasPermission;
+
+    function hasPermission(address, address, bytes32) external view returns (bool hasPermission_) {
+        hasPermission_ = _hasPermission;
+    }
+
+    function __setHasPermission(bool hasPermission_) external {
+        _hasPermission = hasPermission_;
     }
 
 }

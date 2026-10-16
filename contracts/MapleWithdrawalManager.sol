@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.34;
 
 import { ERC20Helper }           from "../modules/erc20-helper/src/ERC20Helper.sol";
 import { IMapleProxyFactory }    from "../modules/maple-proxy-factory/contracts/interfaces/IMapleProxyFactory.sol";
@@ -11,7 +11,8 @@ import {
     IERC20Like,
     IGlobalsLike,
     IPoolLike,
-    IPoolManagerLike
+    IPoolManagerLike,
+    IPoolPermissionManagerLike
 } from "./interfaces/Interfaces.sol";
 
 import { MapleWithdrawalManagerStorage } from "./proxy/MapleWithdrawalManagerStorage.sol";
@@ -40,13 +41,6 @@ import { SortedLinkedList } from "./utils/SortedLinkedList.sol";
     ██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██╔══██╗
     ██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║  ██║
     ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
-
-    ██╗   ██╗██████╗  ██████╗  ██████╗
-    ██║   ██║╚════██╗██╔═████╗██╔═████╗
-    ██║   ██║ █████╔╝██║██╔██║██║██╔██║
-    ╚██╗ ██╔╝██╔═══╝ ████╔╝██║████╔╝██║
-    ╚████╔╝ ███████╗╚██████╔╝╚██████╔╝
-    ╚═══╝  ╚══════╝ ╚═════╝  ╚═════╝
 
 */
 
@@ -288,6 +282,17 @@ contract MapleWithdrawalManager is IMapleWithdrawalManager, MapleWithdrawalManag
         require(request_.owner == msg.sender,       "WM:RSBI:NOT_OWNER");
         require(sharesToRemove_ != 0,               "WM:RSBI:NO_CHANGE");
         require(sharesToRemove_ <= request_.shares, "WM:RSBI:INSUFFICIENT_SHARES");
+
+        address poolManager_ = poolManager;
+
+        require(
+            IPoolPermissionManagerLike(IPoolManagerLike(poolManager_).poolPermissionManager()).hasPermission(
+                poolManager_,
+                msg.sender,
+                "WM:removeSharesById"
+            ),
+            "WM:RSBI:NOT_ALLOWED"
+        );
 
         // Removes shares and will cancel the request if there are no shares remaining.
         sharesReturned_  = _removeShares(requestId_, sharesToRemove_, request_.owner, request_.shares);

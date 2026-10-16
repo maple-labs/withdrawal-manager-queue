@@ -2,6 +2,6 @@ name: withdrawal-manager-queue
 version: 1.0.0
 source: contracts
 packages:
-  - path: contracts/MapleWithdrawalManager.sol
-    contractName: MapleWithdrawalManager
+  - path: contracts/WithdrawalManager.sol
+    contractName: WithdrawalManager
 customDescription: Withdrawal Manager Queue Artifacts and ABIs

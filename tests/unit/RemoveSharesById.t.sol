@@ -84,6 +84,17 @@ contract RemoveSharesByIdFailureTests is TestBase {
         withdrawalManager.removeSharesById(1, 10);
     }
 
+    function test_removeSharesById_notAllowed() external {
+        vm.prank(pm);
+        uint256 requestId = withdrawalManager.addShares(1, lp);
+
+        poolPermissionManager.__setHasPermission(false);
+
+        vm.prank(lp);
+        vm.expectRevert("WM:RSBI:NOT_ALLOWED");
+        withdrawalManager.removeSharesById(requestId, 1);
+    }
+
     function test_removeSharesById_transferFail() external {
         vm.prank(pm);
         withdrawalManager.addShares(5, lp);

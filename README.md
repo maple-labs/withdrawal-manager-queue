@@ -1,7 +1,7 @@
 # Withdrawal Manager Queue
 
 ![CI](https://github.com/maple-labs/withdrawal-manager-queue/actions/workflows/ci.yml/badge.svg)
-[![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/maple-for-developers/protocol-overview)
+[![GitBook - Documentation](https://img.shields.io/badge/GitBook-Documentation-orange?logo=gitbook&logoColor=white)](https://maplefinance.gitbook.io/maple/technical-resources/protocol-overview)
 [![Foundry][foundry-badge]][foundry]
 [![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](https://github.com/maple-labs/withdrawal-manager-queue/blob/main/LICENSE)
 
@@ -10,11 +10,15 @@
 
 ## Overview
 
-This repository contains the contracts and modules of the Pool Permission Manager.
+This repository contains the `MapleWithdrawalManager` contract, which queues redemption requests from pool lenders and processes them in order, along with its factory, initializer and storage contracts.
 
 ## Submodules
 
 Submodules imported:
+- [`maple-labs/erc20`](https://github.com/maple-labs/erc20)
+- [`maple-labs/erc20-helper`](https://github.com/maple-labs/erc20-helper)
+- [`maple-labs/maple-proxy-factory`](https://github.com/maple-labs/maple-proxy-factory)
+- [`foundry-rs/forge-std`](https://github.com/foundry-rs/forge-std)
 
 Versions of dependencies can be checked with `git submodule status`.
 
@@ -27,14 +31,6 @@ git clone git@github.com:maple-labs/withdrawal-manager-queue.git
 cd withdrawal-manager-queue
 forge install
 ```
-
-## Audit Reports
-For all audit reports please refer to https://docs.maple.finance/technical-resources/security/security
-
-| Auditor | Report Link |
-|---|---|
-| Three Sigma | [`2023-11-06 - Three Sigma Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/13707288/Maple-Q4-Three-Sigma-Audit.pdf) |
-| 0xMacro | [`2023-11-27 - 0xMacro Report`](https://docs.google.com/viewer?url=https://github.com/maple-labs/maple-v2-audits/files/13707291/Maple-Q4-0xMacro-Audit.pdf) |
 
 ## Bug Bounty
 
